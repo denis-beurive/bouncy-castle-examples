@@ -7,6 +7,10 @@ the [Cipher block chaining (CBC) mode](https://en.wikipedia.org/wiki/Block_ciphe
 
 * [Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs » 1.65](https://mvnrepository.com/artifact/org.bouncycastle/bcpkix-jdk15to18/1.65)
 
+# Documentation
+
+* [CBCBlockCipher](https://people.eecs.berkeley.edu/~jonah/bc/org/bouncycastle/crypto/modes/CBCBlockCipher.html)
+
 # Technical notes
 
 ## Run the example
@@ -15,7 +19,7 @@ the [Cipher block chaining (CBC) mode](https://en.wikipedia.org/wiki/Block_ciphe
 
 > Make sure to run `gradle getDeps` (at the project root level) first.
 
-## Cypher algorithm
+## Cipher algorithm
 
 * **DES block size**: 64 bits (8 bytes)
 * **DES key length**:
@@ -31,5 +35,5 @@ In the example, we use:
         byte[] key = Hex.decode("0123456789abcdef");
         byte[] iv = Hex.decode("0123456789abcdef");
         
-The length of the _clear text_ (`input`) is: ` 24 = 8 * 3` bytes.
+The length of the _clear text_ (`input`) is: `24 = 8 * 3` bytes.
 It is, of course, a multiple of 8 (bytes).

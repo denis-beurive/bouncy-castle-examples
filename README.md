@@ -39,3 +39,4 @@ Then, build all the example applications:
 | Algorithm | Cypher mode | Example                                |
 |-----------|-------------|----------------------------------------|
 | DES       | CBC         | [app-cbc-des/](app-cbc-des/README.md)  |
+| DES       | CFB         | [app-cfb-des/](app-cfb-des/README.md)  |
