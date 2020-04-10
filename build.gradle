@@ -1,0 +1,19 @@
+// gradle tasks
+// gradle getDeps: this will download the required dependencies and store them into the directory "lib".
+
+allprojects {
+    apply plugin: 'java'
+    group 'org.example'
+    version '1.0-SNAPSHOT'
+
+    repositories {
+        mavenCentral()
+    }
+
+    // Download the dependencies and store them into the directory "lib".
+    task getDeps(type: Copy) {
+        from sourceSets.main.runtimeClasspath
+        into 'lib/'
+    }
+}
+
