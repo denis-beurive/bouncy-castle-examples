@@ -28,6 +28,7 @@ the [Cipher block chaining (CBC) mode](https://en.wikipedia.org/wiki/Block_ciphe
     One bit in each 8-bit byte of the KEY may be utilized for error detection in key generation,
     distribution, and storage. Bits 8, 16,..., 64 are for use in ensuring that each byte is of odd
     parity.
+* **DES IV size**: the same as the AES block size (8 bytes).
 
 In the example, we use:
 
