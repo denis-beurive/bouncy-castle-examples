@@ -1,6 +1,18 @@
 // gradle tasks
 // gradle getDeps: this will download the required dependencies and store them into the directory "lib".
 
+String root_dir = project.projectDir
+
+task setup {
+    def file = new File("${root_dir}/setenv.sh")
+    file.setText("# usage: . setenv.sh\nexport PROJECT_ROOT_DIR=${root_dir}")
+    file.createNewFile()
+
+    file = new File("${root_dir}/setenv.bat")
+    file.setText("set PROJECT_ROOT_DIR=${root_dir}")
+    file.createNewFile()
+}
+
 allprojects {
     apply plugin: 'java'
     group 'org.example'
@@ -13,7 +25,7 @@ allprojects {
     // Download the dependencies and store them into the directory "lib".
     task getDeps(type: Copy) {
         from sourceSets.main.runtimeClasspath
-        into 'lib/'
+        into "${root_dir}/lib/"
     }
 }
 

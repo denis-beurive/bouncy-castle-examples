@@ -15,7 +15,7 @@ the [Cipher block chaining (CBC) mode](https://en.wikipedia.org/wiki/Block_ciphe
 
 ## Run the example
 
-    java -cp "build/libs/app-cbc-aes-1.0-SNAPSHOT.jar:lib/bcprov-jdk15to18-1.65.jar" com.beurive.Main
+    java -cp "build/libs/app-cbc-aes-1.0-SNAPSHOT.jar:${PROJECT_ROOT_DIR}/lib/bcprov-jdk15to18-1.65.jar" com.beurive.Main
 
 > Make sure to run `gradle getDeps` (at the project root level) first.
 

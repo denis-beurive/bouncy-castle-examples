@@ -26,11 +26,18 @@ You also need Gradle 6.3.
     JVM:          14 (Oracle Corporation 14+36-1461)
     OS:           Linux 4.15.0-72-generic amd64
 
-First, download the required dependencies:
+First setup the environment:
+
+    gradle setup
+    
+* Unix: `. setenv.sh && echo ${PROJECT_ROOT_DIR}`
+* DOS: `setenv.bat`
+
+Then, download the required dependencies:
 
     gradle getDeps
     
-Then, build all the example applications:
+Finally, build all the example applications:
 
     gradle build
     

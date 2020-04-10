@@ -1,6 +1,6 @@
 # Description
 
-Illustrates the use of the [DES](https://en.wikipedia.org/wiki/Data_Encryption_Standard) algorithm using
+Illustrates the use of the [3DES](https://en.wikipedia.org/wiki/Triple_DES) algorithm using
 the [Cipher block chaining (CBC) mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_block_chaining_(CBC)).
 
 # Dependencies
@@ -15,7 +15,7 @@ the [Cipher block chaining (CBC) mode](https://en.wikipedia.org/wiki/Block_ciphe
 
 ## Run the example
 
-    java -cp "build/libs/app-cbc-des-1.0-SNAPSHOT.jar:${PROJECT_ROOT_DIR}/lib/bcprov-jdk15to18-1.65.jar" com.beurive.Main
+    java -cp "build/libs/app-cbc-3des-1.0-SNAPSHOT.jar:${PROJECT_ROOT_DIR}/lib/bcprov-jdk15to18-1.65.jar" com.beurive.Main
 
 > Make sure to run `gradle getDeps` (at the project root level) first.
 

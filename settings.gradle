@@ -1,3 +1,3 @@
 rootProject.name = 'bcdoc'
 include 'app-cbc-des', 'app-cfb-des', 'app-ofb-des',
-        'app-cbc-aes'
+        'app-cbc-aes', 'app-cbc-3des'

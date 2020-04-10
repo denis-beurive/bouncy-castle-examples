@@ -3,4 +3,5 @@ build/
 libs/
 .idea/
 lib/
-
+setenv.bat
+setenv.sh
