@@ -40,3 +40,4 @@ Then, build all the example applications:
 |-----------|-------------|----------------------------------------|
 | DES       | CBC         | [app-cbc-des/](app-cbc-des/README.md)  |
 | DES       | CFB         | [app-cfb-des/](app-cfb-des/README.md)  |
+| DES       | OFB         | [app-ofb-des/](app-ofb-des/README.md)  |
