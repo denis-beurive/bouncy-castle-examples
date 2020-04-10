@@ -1,6 +1,6 @@
 # Description
 
-This repository contains sample programs from the [Bouncy Castle](https://www.bouncycastle.org) library.
+This repository contains sample programs for the [Bouncy Castle](https://www.bouncycastle.org) library.
 
 # Build
 
