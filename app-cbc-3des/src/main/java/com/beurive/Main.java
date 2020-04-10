@@ -13,9 +13,9 @@ public class Main {
     public static void main(String[] args) {
         // The "clear text" (its length must be a multiple of 8 bytes).
         byte[] input = Hex.decode("4e6f77206973207468652074696d6520666f7220616c6c20");
-        // The encryption/decryption key (its length must be exactly 8 bytes).
-        byte[] key = Hex.decode("0123456789abcdef");
-        // The initialisation vector for the CBC mode (its length must be exactly the same as the DES block size: 8 bytes).
+        // The encryption/decryption key (its length must be exactly 16 or 24 bytes).
+        byte[] key = Hex.decode("0123456789abcdef0123456789abcdef");
+        // The initialisation vector for the CBC mode (its length must be exactly the same as the 3DES block size: 8 bytes).
         byte[] iv = Hex.decode("0123456789000000");
 
         // Create the cypher: using 3DES in Cipher block chaining (CBC) mode.
