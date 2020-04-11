@@ -50,3 +50,7 @@ Finally, build all the example applications:
 | DES       | OFB         | [app-ofb-des/](app-ofb-des/README.md)   |
 | AES       | CBC         | [app-cbc-aes/](app-cbc-aes/README.md)   |
 | 3DES      | CBC         | [app-cbc-3des/](app-cbc-3des/README.md) |
+
+| Algorithm | Example                                 |
+|-----------|-----------------------------------------|
+| SHA256    | [app-sha256/](app-sha256/README.md)     |
