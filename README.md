@@ -43,6 +43,8 @@ Finally, build all the example applications:
     
 # Examples
 
+## Block ciphers
+
 | Algorithm | Cypher mode | Example                                 |
 |-----------|-------------|-----------------------------------------|
 | DES       | CBC         | [app-cbc-des/](app-cbc-des/README.md)   |
@@ -51,6 +53,12 @@ Finally, build all the example applications:
 | AES       | CBC         | [app-cbc-aes/](app-cbc-aes/README.md)   |
 | 3DES      | CBC         | [app-cbc-3des/](app-cbc-3des/README.md) |
 
+## Hash algorithms
+
 | Algorithm | Example                                 |
 |-----------|-----------------------------------------|
 | SHA256    | [app-sha256/](app-sha256/README.md)     |
+| SHA512    | [app-sha512/](app-sha512/README.md)     |
+| MD5       | [app-md5/](app-md5/README.md)           |
+| Tiger     | [app-tiger/](app-tiger/README.md)       |
+
