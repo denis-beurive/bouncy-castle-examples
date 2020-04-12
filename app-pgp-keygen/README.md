@@ -32,7 +32,6 @@ The public key structure is defined in the [section 5.5.2 of the RFC 4880](https
 
 The private key structure is defined in the [section 5.5.3 of the RFC 4880](https://tools.ietf.org/html/rfc4880#section-5.5.3).
 
-
-
-
+> **What is the _key ID_** ? In PGP, most keys are created in such a way so that what is called the "key ID" is equal to the
+> lower 32 or 64 bits respectively of a key fingerprint. PGP uses key IDs to refer to public keys for a variety of purposes.
 

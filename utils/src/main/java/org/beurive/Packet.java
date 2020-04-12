@@ -9,7 +9,7 @@ public class Packet {
             result.append("Invalid header (it should contain at least 1 byte).");
             return result.toString();
         }
-        int first_byte = (in_header[0] & 0b10000000) >> 7;
+        int first_bit = (in_header[0] & 0b10000000) >> 7;
         boolean new_format = 1 == ((in_header[0] & 0b01000000) >> 6);
         int packet_tag = 0;
 
@@ -44,7 +44,7 @@ public class Packet {
             }
         }
 
-        result.append(String.format("First byte: %d\n", first_byte));
+        result.append(String.format("First bit: %d\n", first_bit));
         result.append(String.format("New format? %s\n", new_format ? "yes" : "no"));
         result.append(format.toString());
         return result.toString();
