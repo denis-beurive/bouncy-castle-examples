@@ -62,3 +62,8 @@ Finally, build all the example applications:
 | MD5       | [app-md5/](app-md5/README.md)           |
 | Tiger     | [app-tiger/](app-tiger/README.md)       |
 
+## PGP
+
+| Action           | Example                                      |
+|------------------|----------------------------------------------|
+| Key generation   | [app-pgp-keygen/](app-pgp-keygen/README.md)  |

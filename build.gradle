@@ -20,6 +20,10 @@ allprojects {
 
     repositories {
         mavenCentral()
+        // The JAR that comes from the sub-project "utils" is located into "${root_dir}/lib".
+        flatDir {
+            dirs "${root_dir}/lib"
+        }
     }
 
     // Download the dependencies and store them into the directory "lib".
@@ -29,3 +33,12 @@ allprojects {
     }
 }
 
+subprojects {
+    apply plugin: 'java'
+    tasks.withType(Jar) {
+        // Set the destination path for the JAR.
+        if ("utils" == project.name) {
+            destinationDirectory = file("${root_dir}/lib")
+        }
+    }
+}
