@@ -64,6 +64,19 @@ Finally, build all the example applications:
 
 ## PGP
 
-| Action           | Example                                      |
-|------------------|----------------------------------------------|
-| Key generation   | [app-pgp-keygen/](app-pgp-keygen/README.md)  |
+Please note the terms "key" and "subkey" may be confusing.
+
+> [What exactly is a subkey?](https://security.stackexchange.com/questions/76940/what-exactly-is-a-subkey)
+>
+> Originally in PGP 2.6, back in the early 90s, you had just one keypair and it was used for both encryption and signing. The ability to have additional keypairs presented some engineering challenges. Ultimately, it was decided that the additonal keypairs would be called "subkeys", despite the fact there's nothing "sub" about them. Likewise, what you call your "key" isn't really a key at all--the terminology is a holdover from the days when a key really was a key. Nowadays, a key is really a collection of keys, along with some metadata for user identifiers, signatures, etc.
+>
+> E.g., my "key" has four keypairs on it: 5B8709EB, D0C6AAE4, 71E177DB and 8DB02BBB3.
+>
+> What GnuPG calls your "public key" is really the oldest signing key in the collection. E.g., since 5B8709EB was created first, GnuPG calls the entire set of keys and metadata the "5B8709EB key".
+>
+> So, "is it possible to have a key that's used for encryption and signing without any subkey at all?" The answer here is no, because all keypairs on a key are subkeys. Even if there's only one of them. 
+
+| Action               | Example                                       | Notes                                  |
+|----------------------|-----------------------------------------------|-----------------------------------------
+| Key generation       | [app-pgp-keygen/](app-pgp-keygen/README.md)   | see note about key/keyring             |
+| PGP Document loading | [app-pgp-keyload/](app-pgp-keyload/README.md) | key, keyring, encrypted document...    |
