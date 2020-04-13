@@ -30,6 +30,8 @@ Data:
     
 The third packet represents a signature packet ([tag=2](https://tools.ietf.org/html/rfc4880#section-5.2))    
 * `algo=1`: [RSA (Encrypt or Sign)](https://tools.ietf.org/html/rfc4880#section-9.1)
+* `sigclass 0x13`: [Positive certification of a User ID and Public-Key packet](https://tools.ietf.org/html/rfc4880#section-5.2.1)
+* `digest algo=2`: [SHA1](https://tools.ietf.org/html/rfc4880#section-9.4) 
     
 Data:
 
@@ -61,6 +63,8 @@ Data:
         
 The fifth packet represents a signature packet ([tag=2](https://tools.ietf.org/html/rfc4880#section-5.2))    
 * `algo=1`: [RSA (Encrypt or Sign)](https://tools.ietf.org/html/rfc4880#section-9.1)
+* `sigclass 0x18`: [Subkey Binding Signature](https://tools.ietf.org/html/rfc4880#section-5.2.1)
+* `digest algo=2`: [SHA1](https://tools.ietf.org/html/rfc4880#section-9.4) 
 
 Data:
         
@@ -108,3 +112,7 @@ Data:
 
 ![](images/document1.svg)
 
+Another useful command to print information from the packet:
+
+    $ pgpdump -lmi secret-keyring.pgp
+    
