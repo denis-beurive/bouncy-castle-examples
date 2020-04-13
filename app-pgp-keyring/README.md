@@ -33,6 +33,5 @@ Dump the PGP secret key ring:
 
     gpg --list-packets --verbose secret-keyring.pgp
 
+See the analysis of the [generated documents](../doc/pgp-packets.md).
 
-
-    
