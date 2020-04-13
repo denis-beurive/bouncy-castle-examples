@@ -80,5 +80,4 @@ Please note the terms "key" and "subkey" may be confusing.
 |----------------------|-----------------------------------------------|-----------------------------------------
 | Key generation       | [app-pgp-keygen/](app-pgp-keygen/README.md)   | see note about key/keyring             |
 | PGP Document loading | [app-pgp-keyload/](app-pgp-keyload/README.md) | key, keyring, encrypted document...    |
-| Key ring creation    | [app-pgp-keyring/](app-pgp-keyring/README.md) | Key ring with RSA, DSA, El Gamal       |
-
+| Keyring creation     | [app-pgp-keyring/](app-pgp-keyring/README.md) | Keyring with RSA, DSA, El Gamal        |
