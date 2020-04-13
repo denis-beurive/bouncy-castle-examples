@@ -43,6 +43,6 @@ Dump the PGP public key ring:
     gpg --list-packets --verbose public-keyring.pgp
     
 Dump the PGP secret key ring:
-~~~~
+
     gpg --list-packets --verbose secret-keyring.pgp
     
