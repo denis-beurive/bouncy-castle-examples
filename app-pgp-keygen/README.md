@@ -10,7 +10,6 @@ Illustrates the generation of the PGP keys.
 # Documentation
 
 * [RFC 4880](https://tools.ietf.org/html/rfc4880)
-* [RSAKeyGenerationParameters](https://people.eecs.berkeley.edu/~jonah/bc/org/bouncycastle/crypto/params/RSAKeyGenerationParameters.html)
 
 # Technical notes
 
@@ -22,16 +21,28 @@ Illustrates the generation of the PGP keys.
 
 ## Keys structure
 
-Be aware the sample code produces [Key Material Packet](https://tools.ietf.org/html/rfc4880#section-5.5) (see section _5.5_ of the RFC 4880):
+Be aware that `PGPPrivateKey` is not identical to `PGPSecretKey`.
 
-> A key material packet contains all the information about a public or
-> private key.  There are four variants of this packet type, and two
-> major versions.  Consequently, this section is complex.
+The public PGP key structure is defined in the [section 5.5.2 of the RFC 4880](https://tools.ietf.org/html/rfc4880#section-5.5.2).
 
-The public key structure is defined in the [section 5.5.2 of the RFC 4880](https://tools.ietf.org/html/rfc4880#section-5.5.2).
+The private PGP key structure is defined in the [section 5.5.3 of the RFC 4880](https://tools.ietf.org/html/rfc4880#section-5.5.3).
 
-The private key structure is defined in the [section 5.5.3 of the RFC 4880](https://tools.ietf.org/html/rfc4880#section-5.5.3).
+What is the _key ID_ ? In PGP, most keys are created in such a way so that what is called the "key ID" is equal to the
+lower 32 or 64 bits respectively of a key fingerprint. PGP uses key IDs to refer to public keys for a variety of purposes.
 
-> **What is the _key ID_** ? In PGP, most keys are created in such a way so that what is called the "key ID" is equal to the
-> lower 32 or 64 bits respectively of a key fingerprint. PGP uses key IDs to refer to public keys for a variety of purposes.
+Dump the PGP public key:
 
+    gpg --list-packets --verbose public-key.pgp
+
+Dump the PGP secret key:
+
+    gpg --list-packets --verbose secret-key.pgp
+
+Dump the PGP public key ring:
+
+    gpg --list-packets --verbose public-keyring.pgp
+    
+Dump the PGP secret key ring:
+~~~~
+    gpg --list-packets --verbose secret-keyring.pgp
+    

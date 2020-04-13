@@ -8,8 +8,6 @@ import java.security.Security;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 
 import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
@@ -39,21 +37,18 @@ import org.beurive.Packet;
 
 public class Main {
 
+    private static ArmoredOutputStream get_stream(String in_path) throws IOException {
+        return new ArmoredOutputStream(new BufferedOutputStream(new FileOutputStream(new File(in_path))));
+    }
 
     public static void main(String[] args) {
 
         // Declare the provider "BC" (for Bouncy Castle).
-        // new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc).setProvider("BC").build(passPhrase)
         Security.addProvider(new BouncyCastleProvider());
 
         byte[] content = null;
 
-        // ------------------------------------------------------------------
-        // Generate "Key Material Packet" (see section 5.5 of the RFC 4880)
-        // - the public key packet.
-        // - the private key packet.
-        // ------------------------------------------------------------------
-
+        // Create a key pair generator for RSA.
         RSAKeyPairGenerator rsaKpg = new RSAKeyPairGenerator();
         BigInteger publicExponent = BigInteger.valueOf(0x11);
         SecureRandom random = new SecureRandom();
@@ -65,7 +60,7 @@ public class Main {
                 strength,
                 certainty));
 
-        // Generate the keys.
+        // Generate the RSA keys.
         AsymmetricCipherKeyPair rsaKp = rsaKpg.generateKeyPair();
         PGPKeyPair rsaKeyPair = null;
         try {
@@ -75,54 +70,25 @@ public class Main {
             System.exit(1);
         }
 
-        PGPPublicKey publicKey = rsaKeyPair.getPublicKey();
-        PGPPrivateKey privateKey = rsaKeyPair.getPrivateKey();
+        PGPPublicKey publicRsaKey = rsaKeyPair.getPublicKey();
+        PGPPrivateKey privateRsaKey = rsaKeyPair.getPrivateKey();
 
-        // ------------------------------------------------------------------
         // Public key (see section 5.5.2 of the RFC 4880)
-        // ------------------------------------------------------------------
-
-        try {
-            content = publicKey.getEncoded();
-        } catch (IOException e) {
-            System.out.println("ERROR: " + e.toString());
-            System.exit(1);
-        }
-
         System.out.println("Public key");
-        System.out.println("==========\n");
-        System.out.println("Fingerprint:     " + "0x" + new String(Hex.encode(publicKey.getFingerprint())));
-        System.out.println("ID:              " + "0x" + Long.toHexString(publicKey.getKeyID()));
-        System.out.println("Algorithm:       " + publicKey.getAlgorithm() + ". See RFC 4880 - section 9.1 <Public-Key Algorithms>: 1 => RSA (Encrypt or Sign)");
-        System.out.println("Creation time:   " + publicKey.getCreationTime().toString());
-        System.out.println("Is encryption:   " + (publicKey.isEncryptionKey() ? "yes" : "no"));
-        System.out.println("Has revocation:  " + (publicKey.hasRevocation() ? "yes" : "no"));
-        System.out.println("OpenPGP version: " + publicKey.getVersion() + " . See RFC 4880 - section 5.2.2 <Public-Key Packet Formats>");
-        System.out.println("Length:          " + content.length + "\n");
-        System.out.println(Hex.toHexString(content) + "\n");
-        System.out.println("Packet explorer:");
-        System.out.println(Packet.dump_header(content) + "\n");
+        System.out.println("  Fingerprint:     " + "0x" + new String(Hex.encode(publicRsaKey.getFingerprint())));
+        System.out.println("  ID:              " + "0x" + Long.toHexString(publicRsaKey.getKeyID()));
+        System.out.println("  Algorithm:       " + publicRsaKey.getAlgorithm() + ". See RFC 4880 - section 9.1 <Public-Key Algorithms>: 1 => RSA (Encrypt or Sign)");
+        System.out.println("  Creation time:   " + publicRsaKey.getCreationTime().toString());
+        System.out.println("  Is encryption:   " + (publicRsaKey.isEncryptionKey() ? "yes" : "no"));
+        System.out.println("  Has revocation:  " + (publicRsaKey.hasRevocation() ? "yes" : "no"));
+        System.out.println("  OpenPGP version: " + publicRsaKey.getVersion() + " . See RFC 4880 - section 5.2.2 <Public-Key Packet Formats>\n");
 
-        // ------------------------------------------------------------------
         // Private key (see section 5.5.3 of the RFC 4880)
-        //
-        // A Secret-Key packet contains all the information that is found in
-        // a Public-Key packet, including the public-key material, but also
-        // includes the secret-key material after all the public-key fields.
-        // ------------------------------------------------------------------
-
-        content = privateKey.getPrivateKeyDataPacket().getEncoded();
         System.out.println("Private key");
-        System.out.println("===========\n");
-        System.out.println("ID:            " + "0x" + Long.toHexString(privateKey.getKeyID()));
-        System.out.println("Packet format: " + privateKey.getPrivateKeyDataPacket().getFormat());
-        System.out.println("length:        " + content.length + "\n");
-        System.out.println(Hex.toHexString(content));
+        System.out.println("  ID:            " + "0x" + Long.toHexString(privateRsaKey.getKeyID()));
+        System.out.println("  Packet format: " + privateRsaKey.getPrivateKeyDataPacket().getFormat() + "\n");
 
-        // ------------------------------------------------------------------
-        // Generate the keyring
-        // ------------------------------------------------------------------
-
+        // Create the keyring generator.
         String identity = "denis@email.com";
         char[] passPhrase = "password".toCharArray();
 
@@ -144,6 +110,7 @@ public class Main {
             System.exit(1);
         }
 
+        // Generate the PGP keys.
         PGPPublicKeyRing pubRing = keyRingGen.generatePublicKeyRing();
         PGPSecretKeyRing secRing = keyRingGen.generateSecretKeyRing();
 
@@ -161,19 +128,32 @@ public class Main {
             System.exit(1);
         }
 
-
+        // Save everything into files.
         try {
-            PGPSecretKey s1 = secRing.getSecretKey();
-            ArmoredOutputStream outputStream = new ArmoredOutputStream(
-                    new BufferedOutputStream(
-                            new FileOutputStream(
-                                    new File("secret-key.key"))));
-            s1.encode(outputStream);
+
+            ArmoredOutputStream outputStream;
+
+            // Save the public key into a file.
+            PGPPublicKey publicPgpKey = pubRing.getPublicKey();
+            outputStream = get_stream("public-key.pgp");
+            publicPgpKey.encode(outputStream);
             outputStream.close();
 
-        } catch (FileNotFoundException e) {
-            System.out.println("ERROR: " + e.toString());
-            System.exit(1);
+            // Save the secret key into a file.
+            PGPSecretKey secretPgpKey = secRing.getSecretKey();
+            outputStream = get_stream("secret-key.pgp");
+            secretPgpKey.encode(outputStream);
+            outputStream.close();
+
+            // Save the public key ring into a file.
+            outputStream = get_stream("public-keyring.pgp");
+            pubRing.encode(outputStream);
+            outputStream.close();
+
+            // Save the secrete key ring into a file.
+            outputStream = get_stream("secret-keyring.pgp");
+            secRing.encode(outputStream);
+            outputStream.close();
         } catch (IOException e) {
             System.out.println("ERROR: " + e.toString());
             System.exit(1);

@@ -2,6 +2,12 @@ package org.beurive;
 
 public class Packet {
 
+    /**
+     * Create a textual representation of a given PGP packet header, as defined by RFC 4880.
+     * @param in_header The header.
+     * @return A string that represents the package header.
+     */
+
     public static String dump_header(byte[] in_header) {
         StringBuilder result = new StringBuilder();
 
