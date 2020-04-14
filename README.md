@@ -41,22 +41,22 @@ Then, build all the example applications:
 
 ## Block ciphers
 
-| Algorithm | Cypher mode | Example                                 |
-|-----------|-------------|-----------------------------------------|
-| DES       | CBC         | [app-cbc-des/](app-cbc-des/README.md)   |
-| DES       | CFB         | [app-cfb-des/](app-cfb-des/README.md)   |
-| DES       | OFB         | [app-ofb-des/](app-ofb-des/README.md)   |
-| AES       | CBC         | [app-cbc-aes/](app-cbc-aes/README.md)   |
-| 3DES      | CBC         | [app-cbc-3des/](app-cbc-3des/README.md) |
+| Algorithm | Cypher mode | Example                       |
+|-----------|-------------|-------------------------------|
+| DES       | CBC         | [app-cbc-des/](app-cbc-des)   |
+| DES       | CFB         | [app-cfb-des/](app-cfb-des)   |
+| DES       | OFB         | [app-ofb-des/](app-ofb-des)   |
+| AES       | CBC         | [app-cbc-aes/](app-cbc-aes)   |
+| 3DES      | CBC         | [app-cbc-3des/](app-cbc-3des) |
 
 ## Hash algorithms
 
-| Algorithm | Example                                 |
-|-----------|-----------------------------------------|
-| SHA256    | [app-sha256/](app-sha256/README.md)     |
-| SHA512    | [app-sha512/](app-sha512/README.md)     |
-| MD5       | [app-md5/](app-md5/README.md)           |
-| Tiger     | [app-tiger/](app-tiger/README.md)       |
+| Algorithm | Example                       |
+|-----------|-------------------------------|
+| SHA256    | [app-sha256/](app-sha256)     |
+| SHA512    | [app-sha512/](app-sha512)     |
+| MD5       | [app-md5/](app-md5)           |
+| Tiger     | [app-tiger/](app-tiger)       |
 
 ## PGP
 
@@ -72,15 +72,14 @@ Please note the terms "key" and "subkey" may be confusing.
 >
 > So, "is it possible to have a key that's used for encryption and signing without any subkey at all?" The answer here is no, because all keypairs on a key are subkeys. Even if there's only one of them. 
 
-| Action               | Example                                       | Notes                                  |
-|----------------------|-----------------------------------------------|-----------------------------------------
-| Key generation       | [app-pgp-keygen/](app-pgp-keygen/README.md)   | see note about key/keyring             |
-| PGP Document loading | [app-pgp-keyload/](app-pgp-keyload/README.md) | key, keyring, encrypted document...    |
-| Keyring creation     | [app-pgp-keyring/](app-pgp-keyring/README.md) | Keyring with RSA, DSA, El Gamal        |
-| Signing              | [app-pgp-sign/](app-pgp-sign/README.md)       | Signing                                |
+| Action               | Example                             | Notes                                  |
+|----------------------|-------------------------------------|-----------------------------------------
+| Key generation       | [app-pgp-keygen/](app-pgp-keygen)   | see note about key/keyring             |
+| PGP Document loading | [app-pgp-keyload/](app-pgp-keyload) | key, keyring, encrypted document...    |
+| Keyring creation     | [app-pgp-keyring/](app-pgp-keyring) | Keyring with RSA, DSA, El Gamal        |
+| Signing              | [app-pgp-sign/](app-pgp-sign)       | Signing                                |
 
 # Documents
 
-* (Anatomy of a secret key keyring)[doc/pgp-packets-secret-keyring.md]
-* (Anatomy of a signature)[doc/pgp-packets-signature.md]
-
+* [Anatomy of a secret key keyring](doc/pgp-packets-secret-keyring.md)
+* [Anatomy of a signature](doc/pgp-packets-signature.md)
