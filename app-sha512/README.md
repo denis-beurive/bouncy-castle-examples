@@ -16,7 +16,7 @@ Illustrates the use of the [SHA512](https://en.wikipedia.org/wiki/SHA-2) algorit
 
     java -cp "build/libs/app-sha512-1.0-SNAPSHOT.jar:${PROJECT_ROOT_DIR}/lib/bcprov-jdk15to18-1.65.jar" com.beurive.Main
 
-> Make sure to run `gradle getDeps` (at the project root level) first.
+> Make sure to run `gradle setup` (at the project root level) first.
 
 ## Notes
 
