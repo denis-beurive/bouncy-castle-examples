@@ -5,3 +5,6 @@ libs/
 lib/
 setenv.bat
 setenv.sh
+gradlew
+gradlew.bat
+gradle

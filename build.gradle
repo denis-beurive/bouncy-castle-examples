@@ -1,9 +1,26 @@
 // gradle tasks
-// gradle getDeps: this will download the required dependencies and store them into the directory "lib".
 
 String root_dir = project.projectDir
 
 task setup {
+
+    // Download the dependencies and put them into the directory "lib".
+    // Having all dependencies in a well-known location makes setting CLASSPATH easy.
+    // Note: we could use the Gradle cache in order to make the JARs available.
+    //       But the structure of the Gradle cache makes the operation difficult.
+    def dependencies = [
+            'bcprov-jdk15to18-1.65.jar': 'https://repo1.maven.org/maven2/org/bouncycastle/bcprov-jdk15to18/1.65/bcprov-jdk15to18-1.65.jar',
+            'bcpg-jdk15to18-1.65.jar': 'https://repo1.maven.org/maven2/org/bouncycastle/bcpg-jdk15to18/1.65/bcpg-jdk15to18-1.65.jar'
+    ]
+
+    dependencies.each {
+        def f = new File("${root_dir}/lib/${it.key}")
+        if (!f.exists()) {
+            new URL(it.value).withInputStream{ i -> f.withOutputStream{ it << i }}
+        }
+    }
+
+    // Create a shell script that can be used to set environment variables.
     def file = new File("${root_dir}/setenv.sh")
     file.setText("# usage: . setenv.sh\nexport PROJECT_ROOT_DIR=${root_dir}")
     file.createNewFile()
@@ -20,23 +37,15 @@ allprojects {
 
     repositories {
         mavenCentral()
-        // The JAR that comes from the sub-project "utils" is located into "${root_dir}/lib".
-        flatDir {
-            dirs "${root_dir}/lib"
-        }
-    }
-
-    // Download the dependencies and store them into the directory "lib".
-    task getDeps(type: Copy) {
-        from sourceSets.main.runtimeClasspath
-        into "${root_dir}/lib/"
     }
 }
 
 subprojects {
     apply plugin: 'java'
+
     tasks.withType(Jar) {
         // Set the destination path for the JAR.
+        // It is not necessary to declare a dependency directory (flatDir { dirs "${root_dir}/lib" }).
         if ("utils" == project.name) {
             destinationDirectory = file("${root_dir}/lib")
         }

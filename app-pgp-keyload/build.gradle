@@ -3,7 +3,5 @@ dependencies {
     compile group: 'org.bouncycastle', name: 'bcprov-jdk15to18', version: '1.65'
     // See https://mvnrepository.com/artifact/org.bouncycastle/bcpg-jdk15to18/1.65
     compile group: 'org.bouncycastle', name: 'bcpg-jdk15to18', version: '1.65'
-    implementation name: 'utils-1.0-SNAPSHOT'
+    implementation project(':utils')
 }
-
-compileJava.dependsOn(':utils:build')
