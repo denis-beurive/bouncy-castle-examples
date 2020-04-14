@@ -1,161 +1,151 @@
 package com.beurive;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.Date;
-import java.io.IOException;
 import java.security.Security;
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
+import java.util.Date;
+import java.util.Iterator;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.FileInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.File;
-
-import org.bouncycastle.crypto.generators.DSAParametersGenerator;
-import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
-import org.bouncycastle.crypto.generators.DSAKeyPairGenerator;
-import org.bouncycastle.crypto.generators.ElGamalKeyPairGenerator;
-import org.bouncycastle.crypto.params.DSAParameters;
-import org.bouncycastle.crypto.params.ElGamalParameters;
-import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
-import org.bouncycastle.crypto.params.DSAKeyGenerationParameters;
-import org.bouncycastle.crypto.params.ElGamalKeyGenerationParameters;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.openpgp.PGPKeyPair;
-import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
-import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
-import org.bouncycastle.bcpg.HashAlgorithmTags;
-import org.bouncycastle.openpgp.PGPKeyRingGenerator;
 import org.bouncycastle.openpgp.PGPSignature;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
-import org.bouncycastle.openpgp.PGPEncryptedData;
-import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.PGPPrivateKey;
+import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPSignatureGenerator;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
+import org.bouncycastle.openpgp.PGPCompressedData;
+import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
+import org.bouncycastle.openpgp.PGPLiteralData;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class Main {
 
     /**
-     * Get an ArmoredOutputStream to file identified by its given path.
-     * @param inPath Pah to the file to create.
-     * @return An ArmoredOutputStream to the file which path was given.
+     * Get an ArmoredInputStream to file identified by its given path.
+     * @param in_path Path to the file to create.
+     * @return An ArmoredInputStream to the file which path was given.
      * @throws IOException
      */
-    private static ArmoredOutputStream getStream(String inPath) throws IOException {
-        return new ArmoredOutputStream(new BufferedOutputStream(new FileOutputStream(new File(inPath))));
+
+    private static ArmoredInputStream getInputStream(String in_path) throws IOException {
+        return new ArmoredInputStream(new BufferedInputStream(new FileInputStream(new File(in_path))));
     }
 
     /**
-     * Create a RSA key pair.
-     * @return An RSA key pair.
-     * @throws PGPException
-     */
-    private static PGPKeyPair createRsaKeyPair() throws PGPException {
-        // Create a key pair generator for RSA.
-        RSAKeyPairGenerator rsaKpg = new RSAKeyPairGenerator();
-        BigInteger publicExponent = BigInteger.valueOf(0x11);
-        SecureRandom random = new SecureRandom();
-        int strength = 512;
-        int certainty = 25;
-        rsaKpg.init(new RSAKeyGenerationParameters(
-                publicExponent,
-                random,
-                strength,
-                certainty));
-
-        // Generate the RSA keys.
-        AsymmetricCipherKeyPair rsaKp = rsaKpg.generateKeyPair();
-        return new BcPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
-    }
-
-    /**
-     * Create a DSA PGP key pair.
-     * @return A DSA key pair.
-     * @throws PGPException
+     * Load a secret key ring from a given file.
+     * @param inPath Path to the secret key ring.
+     * @return The secret key ring.
+     * @throws IOException
+     * @throws NullPointerException
      */
 
-    private static PGPKeyPair createDsaKeyPair() throws PGPException {
-        DSAParametersGenerator dsaPGen = new DSAParametersGenerator();
-        int size = 512;
-        int certainty = 10;
-        dsaPGen.init(size, certainty, new SecureRandom());
-        DSAKeyPairGenerator dsaKpg = new DSAKeyPairGenerator();
-        dsaKpg.init(new DSAKeyGenerationParameters(new SecureRandom(), dsaPGen.generateParameters()));
-        AsymmetricCipherKeyPair  dsaKp = dsaKpg.generateKeyPair();
-        return new BcPGPKeyPair(PGPPublicKey.DSA, dsaKp, new Date());
+    private static PGPSecretKeyRing loadSecretKeyRing(String inPath)
+            throws IOException, NullPointerException {
+        // Load the secret key ring.
+        ArmoredInputStream inputStream = getInputStream(inPath);
+        PGPObjectFactory pgpObjectFactory = new PGPObjectFactory(
+                inputStream, new JcaKeyFingerprintCalculator());
+
+        Object pgpObject;
+        PGPSecretKeyRing secretKeyRing = null;
+        while ((pgpObject = pgpObjectFactory.nextObject()) != null) {
+            System.out.println(pgpObject.getClass().getName());
+            secretKeyRing = (PGPSecretKeyRing)pgpObject;
+        }
+        inputStream.close();
+        return secretKeyRing;
     }
 
-    /**
-     * Create an El Gamal key pair
-     * @return An El Gamal key pair
-     * @throws PGPException
-     */
-
-    private static PGPKeyPair createElGamalKeyPair() throws PGPException {
-        ElGamalKeyPairGenerator elgKpg = new ElGamalKeyPairGenerator();
-        BigInteger g = new BigInteger("153d5d6172adb43045b68ae8e1de1070b6137005686d29d3d73a7749199681ee5b212c9b96bfdcfa5b20cd5e3fd2044895d609cf9b410b7a0f12ca1cb9a428cc", 16);
-        BigInteger p = new BigInteger("9494fec095f3b85ee286542b3836fc81a5dd0a0349b4c239dd38744d488cf8e31db8bcb7d33b41abb9e5a33cca9144b1cef332c94bf0573bf047a3aca98cdf3b", 16);
-        ElGamalParameters elParams = new ElGamalParameters(p, g);
-        elgKpg.init(new ElGamalKeyGenerationParameters(new SecureRandom(), elParams));
-        AsymmetricCipherKeyPair elgKp = elgKpg.generateKeyPair();
-        return new BcPGPKeyPair(PGPPublicKey.ELGAMAL_ENCRYPT, elgKp, new Date());
-    }
 
     public static void main(String[] args) {
 
         // Declare the provider "BC" (for Bouncy Castle).
         Security.addProvider(new BouncyCastleProvider());
+        byte[] messageCharArray = "Message to sign".getBytes();
 
-        // Create the keyring generator.
-        String identity = "denis@email.com";
+        // Load the private key.
         char[] passPhrase = "password".toCharArray();
+        PGPSecretKeyRing secretKeyRing = null;
+        PGPPrivateKey privateKey = null;
 
-        PGPKeyRingGenerator keyRingGen = null;
         try {
-            PGPKeyPair rsaKeyPair1 = createRsaKeyPair();     // This will be the "master" key.
-            PGPKeyPair rsaKeyPair2 = createDsaKeyPair();     // This will be a subkey.
-            PGPKeyPair rsaKeyPair3 = createElGamalKeyPair(); // This will be a subkey.
+            secretKeyRing = loadSecretKeyRing("./data/secret-key.pgp");
+            // Unlock the private key.
+            privateKey = secretKeyRing.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(passPhrase));
+        } catch (PGPException | IOException e) {
+            System.out.println("ERROR: " + e.toString());
+            System.exit(1);
+        }
 
-            PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
-            keyRingGen = new PGPKeyRingGenerator(
-                    PGPSignature.POSITIVE_CERTIFICATION,
-                    rsaKeyPair1,
-                    identity,
-                    sha1Calc,
-                    null,
-                    null,
-                    new JcaPGPContentSignerBuilder(rsaKeyPair1.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1),
-                    new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc).setProvider("BC").build(passPhrase)
-            );
+        // Create a signature generator.
+        int keyAlgorithm = privateKey.getPublicKeyPacket().getAlgorithm();
+        int hashAlgorithm = PGPUtil.SHA1;
+        PGPSignatureGenerator signerGenerator = new PGPSignatureGenerator(
+                new JcaPGPContentSignerBuilder(
+                        keyAlgorithm, hashAlgorithm).setProvider("BC"));
 
-            keyRingGen.addSubKey(rsaKeyPair2);
-            keyRingGen.addSubKey(rsaKeyPair3);
+        try {
+            signerGenerator.init(PGPSignature.BINARY_DOCUMENT, privateKey);
         } catch (PGPException e) {
             System.out.println("ERROR: " + e.toString());
             System.exit(1);
         }
 
-        // Generate the PGP keys.
-        PGPPublicKeyRing pubRing = keyRingGen.generatePublicKeyRing();
-        PGPSecretKeyRing secRing = keyRingGen.generateSecretKeyRing();
+        Iterator<String> it = secretKeyRing.getPublicKey().getUserIDs();
+        if (it.hasNext()) {
+            String userId = it.next();
+            System.out.println("Add <" + userId + ">");
+            PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
+            spGen.setSignerUserID(false, userId);
+            signerGenerator.setHashedSubpackets(spGen.generate());
+        }
 
-        // Save everything into files.
+        PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(
+                PGPCompressedData.ZLIB);
+
+        ByteArrayOutputStream encOut = new ByteArrayOutputStream();
+        OutputStream out = encOut;
+        out = new ArmoredOutputStream(out);
+        OutputStream lOut = null;
+        PGPLiteralDataGenerator lGen = null;
+        BCPGOutputStream bOut = null;
+
         try {
-            ArmoredOutputStream outputStream;
+            bOut = new BCPGOutputStream(comData.open(out));
 
-            // Save the public key ring into a file.
-            outputStream = getStream("public-keyring.pgp");
-            pubRing.encode(outputStream);
-            outputStream.close();
+            signerGenerator.generateOnePassVersion(false).encode(bOut);
 
-            // Save the secrete key ring into a file.
-            outputStream = getStream("secret-keyring.pgp");
-            secRing.encode(outputStream);
-            outputStream.close();
-        } catch (IOException e) {
+            lGen = new PGPLiteralDataGenerator();
+            lOut = lGen.open(bOut, PGPLiteralData.BINARY,
+                    PGPLiteralData.CONSOLE, messageCharArray.length, new Date());
+
+            for (byte c : messageCharArray) {
+                lOut.write(c);
+                signerGenerator.update(c);
+            }
+
+            lOut.close();
+            lGen.close();
+
+            signerGenerator.generate().encode(bOut);
+            comData.close();
+            out.close();
+
+            System.out.println(encOut.toString());
+
+        } catch (IOException | PGPException e) {
             System.out.println("ERROR: " + e.toString());
             System.exit(1);
         }

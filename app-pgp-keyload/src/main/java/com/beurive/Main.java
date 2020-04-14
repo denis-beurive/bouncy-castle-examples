@@ -11,7 +11,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 
 public class Main {
 
-    private static ArmoredInputStream get_stream(String in_path) throws IOException {
+    private static ArmoredInputStream getInputStream(String in_path) throws IOException {
         return new ArmoredInputStream(new BufferedInputStream(new FileInputStream(new File(in_path))));
     }
 
@@ -29,7 +29,7 @@ public class Main {
             Object pgpObject;
 
             // Load the public key ring.
-            inputStream = get_stream("./data/public-key.pgp");
+            inputStream = getInputStream("./data/public-key.pgp");
             pgpObjectFactory = new PGPObjectFactory(
                     inputStream, new JcaKeyFingerprintCalculator());
 
@@ -40,7 +40,7 @@ public class Main {
             inputStream.close();
 
             // Load the secret key ring.
-            inputStream = get_stream("./data/secret-key.pgp");
+            inputStream = getInputStream("./data/secret-key.pgp");
             pgpObjectFactory = new PGPObjectFactory(
                     inputStream, new JcaKeyFingerprintCalculator());
 

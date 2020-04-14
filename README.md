@@ -32,12 +32,8 @@ First setup the environment:
     
 * Unix: `. setenv.sh && echo ${PROJECT_ROOT_DIR}`
 * DOS: `setenv.bat`
-
-Then, download the required dependencies:
-
-    gradle getDeps
     
-Finally, build all the example applications:
+Then, build all the example applications:
 
     gradle build
     
@@ -81,3 +77,10 @@ Please note the terms "key" and "subkey" may be confusing.
 | Key generation       | [app-pgp-keygen/](app-pgp-keygen/README.md)   | see note about key/keyring             |
 | PGP Document loading | [app-pgp-keyload/](app-pgp-keyload/README.md) | key, keyring, encrypted document...    |
 | Keyring creation     | [app-pgp-keyring/](app-pgp-keyring/README.md) | Keyring with RSA, DSA, El Gamal        |
+| Signing              | [app-pgp-sign/](app-pgp-sign/README.md)       | Signing                                |
+
+# Documents
+
+* (Anatomy of a secret key keyring)[doc/pgp-packets-secret-keyring.md]
+* (Anatomy of a signature)[doc/pgp-packets-signature.md]
+
