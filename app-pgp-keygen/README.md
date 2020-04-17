@@ -34,13 +34,17 @@ The private PGP key structure is defined in the [section 5.5.3 of the RFC 4880](
 What is the _key ID_ ? In PGP, most keys are created in such a way so that what is called the "key ID" is equal to the
 lower 32 or 64 bits respectively of a key fingerprint. PGP uses key IDs to refer to public keys for a variety of purposes.
 
-Dump the PGP public key:
+Dump the PGP public keys:
 
-    gpg --list-packets --verbose public-key.pgp
+    gpg --list-packets --verbose public-key-1.pgp
+    gpg --list-packets --verbose public-key-2.pgp
+    gpg --list-packets --verbose public-key-3.pgp
 
-Dump the PGP secret key:
+Dump the PGP secret keys:
 
-    gpg --list-packets --verbose secret-key.pgp
+    gpg --list-packets --verbose secret-key-1.pgp
+    gpg --list-packets --verbose secret-key-2.pgp
+    gpg --list-packets --verbose secret-key-3.pgp
 
 Dump the PGP public key ring:
 
@@ -49,4 +53,3 @@ Dump the PGP public key ring:
 Dump the PGP secret key ring:
 
     gpg --list-packets --verbose secret-keyring.pgp
-    

@@ -1,9 +1,6 @@
 # Description
 
-Illustrates the loading of PGP cryptographic document.
-
-This example shows how to load public and secret keys.
-However, the technique can be used to load any kind of PGP document.
+Illustrates the loading of PGP keys and keyrings.
 
 # Dependencies
 

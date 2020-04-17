@@ -76,7 +76,6 @@ Please note the terms "key" and "subkey" may be confusing.
 |----------------------|-------------------------------------|-----------------------------------------
 | Key generation       | [app-pgp-keygen/](app-pgp-keygen)   | see note about key/keyring             |
 | PGP Document loading | [app-pgp-keyload/](app-pgp-keyload) | key, keyring, encrypted document...    |
-| Keyring creation     | [app-pgp-keyring/](app-pgp-keyring) | Keyring with RSA, DSA, El Gamal        |
 | Signing              | [app-pgp-sign/](app-pgp-sign)       | Signing                                |
 | Encryption           | [app-pgp-encrypt/](app-pgp-encrypt) | Encrypt a file                         |
 
