@@ -4,6 +4,8 @@
  * This code is inspired from:
  * - org.bouncycastle.openpgp.examples.KeyBasedFileProcessor
  * - org.bouncycastle.openpgp.examples.PGPExampleUtil
+ *
+ * @see org.bouncycastle.openpgp.examples.PGPExampleUtil
  */
 
 package com.beurive;

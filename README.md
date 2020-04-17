@@ -78,6 +78,7 @@ Please note the terms "key" and "subkey" may be confusing.
 | PGP Document loading | [app-pgp-keyload/](app-pgp-keyload) | key, keyring, encrypted document...    |
 | Keyring creation     | [app-pgp-keyring/](app-pgp-keyring) | Keyring with RSA, DSA, El Gamal        |
 | Signing              | [app-pgp-sign/](app-pgp-sign)       | Signing                                |
+| Encryption           | [app-pgp-encrypt/](app-pgp-encrypt) | Encrypt a file                         |
 
 # Documents
 
@@ -86,8 +87,5 @@ Please note the terms "key" and "subkey" may be confusing.
 
 # Examples from the Bouncy Castle repository
 
-* [pg/src/main/java/org/bouncycastle/openpgp/examples/PGPExampleUtil.java](https://github.com/bcgit/bc-java/blob/master/pg/src/main/java/org/bouncycastle/openpgp/examples/PGPExampleUtil.java)
+* **File and key manipulation**: [pg/src/main/java/org/bouncycastle/openpgp/examples/PGPExampleUtil.java](https://github.com/bcgit/bc-java/blob/master/pg/src/main/java/org/bouncycastle/openpgp/examples/PGPExampleUtil.java)
 * **Encrypt/Decrypt**: [pg/src/main/java/org/bouncycastle/openpgp/examples/KeyBasedFileProcessor.java](https://github.com/bcgit/bc-java/blob/master/pg/src/main/java/org/bouncycastle/openpgp/examples/KeyBasedFileProcessor.java)
-
-
-
