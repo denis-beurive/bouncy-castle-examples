@@ -83,3 +83,11 @@ Please note the terms "key" and "subkey" may be confusing.
 
 * [Anatomy of a secret key keyring](doc/pgp-packets-secret-keyring.md)
 * [Anatomy of a signature](doc/pgp-packets-signature.md)
+
+# Examples from the Bouncy Castle repository
+
+* [pg/src/main/java/org/bouncycastle/openpgp/examples/PGPExampleUtil.java](https://github.com/bcgit/bc-java/blob/master/pg/src/main/java/org/bouncycastle/openpgp/examples/PGPExampleUtil.java)
+* **Encrypt/Decrypt**: [pg/src/main/java/org/bouncycastle/openpgp/examples/KeyBasedFileProcessor.java](https://github.com/bcgit/bc-java/blob/master/pg/src/main/java/org/bouncycastle/openpgp/examples/KeyBasedFileProcessor.java)
+
+
+
