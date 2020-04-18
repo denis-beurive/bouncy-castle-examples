@@ -1,12 +1,11 @@
-/**
- * This file illustrates the encryption process.
- *
- * This code is inspired from:
- * - org.bouncycastle.openpgp.examples.KeyBasedFileProcessor
- * - org.bouncycastle.openpgp.examples.PGPExampleUtil
- *
- * @see org.bouncycastle.openpgp.examples.PGPExampleUtil
- */
+// This file illustrates the encryption process.
+//
+// This code is inspired from:
+// - org.bouncycastle.openpgp.examples.KeyBasedFileProcessor
+// - org.bouncycastle.openpgp.examples.PGPExampleUtil
+//
+// see org.bouncycastle.openpgp.examples.PGPExampleUtil
+
 
 package com.beurive;
 
@@ -44,7 +43,6 @@ public class Main {
 
     /**
      * Loads a file, compress it, and returns its compressed content as an array of bytes.
-     *
      * @param filePath The path to the file to load.
      * @param algorithm The compression algorithm to use.
      * @return An array of bytes that represents the content of the file.
@@ -62,7 +60,6 @@ public class Main {
 
     /**
      * Opens a key ring file and loads the first available key suitable for encryption.
-     *
      * @param input Data stream containing the public key data.
      * @return The first public key found.
      * @throws IOException
@@ -94,7 +91,6 @@ public class Main {
 
     /**
      * Load a public key from a keyring identified by its path.
-     *
      * @param filePath The path to the file that contains the keyring.
      * @return A public key.
      * @throws IOException
@@ -111,7 +107,6 @@ public class Main {
 
     /**
      * Encrypt a file identified by its path and store the result into an output file.
-     *
      * @param outputFilePath Path to the output (encrypted) file.
      * @param inputFilePath Path to the file en encrypt.
      * @param keyringPath Path to the file that contains the public keyring.
@@ -140,7 +135,6 @@ public class Main {
 
     /**
      * Encrypt a file identified by its path and store the result into an output file.
-     *
      * @param out Output stream to the output (encrypted) file.
      * @param inputFilePath Path to the file to encrypt.
      * @param encryptionKey The public key to use for encryption.

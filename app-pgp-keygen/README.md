@@ -1,6 +1,6 @@
 # Description
 
-Illustrates the generation of the PGP keys.
+Illustrates the generation of the PGP keys and key rings.
 
 # Dependencies
 

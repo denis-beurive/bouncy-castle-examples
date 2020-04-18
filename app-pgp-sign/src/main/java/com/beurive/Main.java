@@ -1,14 +1,10 @@
 package com.beurive;
 
+import java.io.*;
 import java.security.Security;
 import java.util.Date;
 import java.util.Iterator;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
-import java.io.File;
+
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
@@ -39,9 +35,21 @@ public class Main {
      * @throws IOException
      */
 
-    private static ArmoredInputStream getInputStream(String in_path) throws IOException {
+    private static ArmoredInputStream getArmoredInputStream(String in_path) throws IOException {
         return new ArmoredInputStream(new BufferedInputStream(new FileInputStream(new File(in_path))));
     }
+
+    /**
+     * Create a ArmoredOutputStream to a file.
+     * @param inPath Path to the file.
+     * @return a new ArmoredOutputStream.
+     * @throws IOException
+     */
+
+    private static ArmoredOutputStream getArmoredOutputStream(String inPath) throws IOException {
+        return new ArmoredOutputStream(new BufferedOutputStream(new FileOutputStream(new File(inPath))));
+    }
+
 
     /**
      * Load a secret key ring from a given file.
@@ -54,7 +62,7 @@ public class Main {
     private static PGPSecretKeyRing loadSecretKeyRing(String inPath)
             throws IOException, NullPointerException {
         // Load the secret key ring.
-        ArmoredInputStream inputStream = getInputStream(inPath);
+        ArmoredInputStream inputStream = getArmoredInputStream(inPath);
         PGPObjectFactory pgpObjectFactory = new PGPObjectFactory(
                 inputStream, new JcaKeyFingerprintCalculator());
 
@@ -68,83 +76,84 @@ public class Main {
         return secretKeyRing;
     }
 
+    /**
+     * Sign a document with a given secret key.
+     * @param inDocumentToSign The document to sign.
+     * @param inOutputFilePath The path to the signature file.
+     * @param inKeyRingPath The path to the key ring.
+     * @param inPassPhrase The passphrase used to activate the secret key.
+     * @throws IOException
+     * @throws PGPException
+     */
 
-    public static void main(String[] args) {
+    static public void sign(String inDocumentToSign,
+                            String inOutputFilePath,
+                            String inKeyRingPath,
+                            String inPassPhrase) throws IOException, PGPException {
 
-        // Declare the provider "BC" (for Bouncy Castle).
-        Security.addProvider(new BouncyCastleProvider());
-        byte[] messageCharArray = "Message to sign".getBytes();
+        byte[] messageCharArray = inDocumentToSign.getBytes();
+        char[] passPhrase = inPassPhrase.toCharArray();
 
         // Load the private key.
-        char[] passPhrase = "password".toCharArray();
-        PGPSecretKeyRing secretKeyRing = null;
-        PGPPrivateKey privateKey = null;
-
-        try {
-            secretKeyRing = loadSecretKeyRing("./data/secret-key.pgp");
-            // Unlock the private key.
-            privateKey = secretKeyRing.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(passPhrase));
-        } catch (PGPException | IOException e) {
-            System.out.println("ERROR: " + e.toString());
-            System.exit(1);
-        }
+        PGPSecretKeyRing secretKeyRing = loadSecretKeyRing(inKeyRingPath);
+        PGPPrivateKey privateKey = secretKeyRing.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(passPhrase));
 
         // Create a signature generator.
         int keyAlgorithm = privateKey.getPublicKeyPacket().getAlgorithm();
         int hashAlgorithm = PGPUtil.SHA1;
         PGPSignatureGenerator signerGenerator = new PGPSignatureGenerator(
-                new JcaPGPContentSignerBuilder(
-                        keyAlgorithm, hashAlgorithm).setProvider("BC"));
+                new JcaPGPContentSignerBuilder(keyAlgorithm, hashAlgorithm).setProvider("BC")
+        );
+        signerGenerator.init(PGPSignature.BINARY_DOCUMENT, privateKey);
 
-        try {
-            signerGenerator.init(PGPSignature.BINARY_DOCUMENT, privateKey);
-        } catch (PGPException e) {
-            System.out.println("ERROR: " + e.toString());
-            System.exit(1);
-        }
-
+        // Set the user IDs.
         Iterator<String> it = secretKeyRing.getPublicKey().getUserIDs();
-        if (it.hasNext()) {
+        while (it.hasNext()) {
             String userId = it.next();
             System.out.println("Add <" + userId + ">");
             PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
+            // If you look at the code of the method "setSignerUserID()", then you see that this method can be called more than once:
+            //    list.add(new SignerUserID(isCritical, userID));
+            // This, it is possible to set more than one user ID.
             spGen.setSignerUserID(false, userId);
             signerGenerator.setHashedSubpackets(spGen.generate());
         }
 
-        PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(
-                PGPCompressedData.ZLIB);
+        PGPCompressedDataGenerator zlibDataGenerator = new PGPCompressedDataGenerator(PGPCompressedData.ZLIB);
+        ArmoredOutputStream armoredOutputStream = getArmoredOutputStream(inOutputFilePath);
 
-        ByteArrayOutputStream encOut = new ByteArrayOutputStream();
-        OutputStream out = encOut;
-        out = new ArmoredOutputStream(out);
-        OutputStream lOut = null;
-        PGPLiteralDataGenerator lGen = null;
-        BCPGOutputStream bOut = null;
+        // BCPGOutputStream: Basic output stream.
+        BCPGOutputStream bOut = new BCPGOutputStream(zlibDataGenerator.open(armoredOutputStream));
+        signerGenerator.generateOnePassVersion(false).encode(bOut);
+
+        PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
+        OutputStream lOut = lGen.open(bOut, PGPLiteralData.BINARY,
+                PGPLiteralData.CONSOLE, messageCharArray.length, new Date());
+
+        for (byte c : messageCharArray) {
+            lOut.write(c);
+            signerGenerator.update(c);
+        }
+
+        lOut.close();
+        lGen.close();
+
+        signerGenerator.generate().encode(bOut);
+        zlibDataGenerator.close();
+        armoredOutputStream.close();
+    }
+
+    public static void main(String[] args) {
+        // Declare the provider "BC" (for Bouncy Castle).
+        Security.addProvider(new BouncyCastleProvider());
+        String documentToSign = "Message to sign";
+        String passPhrase = "password";
 
         try {
-            bOut = new BCPGOutputStream(comData.open(out));
-
-            signerGenerator.generateOnePassVersion(false).encode(bOut);
-
-            lGen = new PGPLiteralDataGenerator();
-            lOut = lGen.open(bOut, PGPLiteralData.BINARY,
-                    PGPLiteralData.CONSOLE, messageCharArray.length, new Date());
-
-            for (byte c : messageCharArray) {
-                lOut.write(c);
-                signerGenerator.update(c);
-            }
-
-            lOut.close();
-            lGen.close();
-
-            signerGenerator.generate().encode(bOut);
-            comData.close();
-            out.close();
-
-            System.out.println(encOut.toString());
-
+            sign(documentToSign,
+                    "./data/signature.pgp",
+                    "./data/secret-key.pgp",
+                    passPhrase);
         } catch (IOException | PGPException e) {
             System.out.println("ERROR: " + e.toString());
             System.exit(1);

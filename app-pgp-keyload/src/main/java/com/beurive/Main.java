@@ -1,3 +1,5 @@
+// This example illustrate the loading of PGP keys and key rings.
+
 package com.beurive;
 
 import java.io.*;
@@ -18,7 +20,7 @@ public class Main {
      * @throws IOException
      */
 
-    private static ArmoredInputStream getInputStream(String in_path) throws IOException {
+    private static ArmoredInputStream getArmoredInputStream(String in_path) throws IOException {
         return new ArmoredInputStream(new BufferedInputStream(new FileInputStream(new File(in_path))));
     }
 
@@ -38,7 +40,7 @@ public class Main {
         Object pgpObject;
         List<Object> pgpObjects = new ArrayList<Object>();
 
-        ArmoredInputStream inputStream = getInputStream(inDocumentPath);
+        ArmoredInputStream inputStream = getArmoredInputStream(inDocumentPath);
 
         // Create an object factory suitable for reading PGP objects such as keys,
         // key rings and key ring collections, or PGP encrypted data.
