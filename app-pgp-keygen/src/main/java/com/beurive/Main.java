@@ -13,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.File;
 import java.util.Iterator;
 
+import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.crypto.generators.DSAKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DSAParametersGenerator;
 import org.bouncycastle.crypto.generators.ElGamalKeyPairGenerator;
@@ -23,9 +24,13 @@ import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.PGPKeyRing;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
+import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -39,6 +44,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.PGPKeyRingGenerator;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class Main {
@@ -50,8 +56,12 @@ public class Main {
      * @throws IOException
      */
 
-    private static ArmoredOutputStream getOutputStream(String inPath) throws IOException {
+    private static ArmoredOutputStream getArmoredOutputStream(String inPath) throws IOException {
         return new ArmoredOutputStream(new BufferedOutputStream(new FileOutputStream(new File(inPath))));
+    }
+
+    private static BCPGOutputStream getBCPGOutputStream(String inPath) throws IOException {
+        return new BCPGOutputStream(new BufferedOutputStream(new FileOutputStream(new File(inPath))));
     }
 
     /**
@@ -62,9 +72,33 @@ public class Main {
      */
 
     private static void DumpKeyRing(PGPKeyRing inKeyRing, String inPath) throws IOException {
-        ArmoredOutputStream outputStream = getOutputStream(inPath);
+        ArmoredOutputStream outputStream = getArmoredOutputStream(inPath);
         inKeyRing.encode(outputStream);
         outputStream.close();
+    }
+
+    /**
+     * Extract the private key from a given secret key.
+     * @param pgpSecKey The secret key.
+     * @param passPhrase The private ket pass phrase.
+     * @return The private key.
+     * @throws PGPException
+     */
+
+    private static PGPPrivateKey extractPrivateKey(PGPSecretKey pgpSecKey, char[] passPhrase)
+            throws PGPException {
+        PGPPrivateKey privateKey = null;
+        BcPGPDigestCalculatorProvider calculatorProvider = new BcPGPDigestCalculatorProvider();
+        BcPBESecretKeyDecryptorBuilder secretKeyDecryptorBuilder = new BcPBESecretKeyDecryptorBuilder(calculatorProvider);
+        PBESecretKeyDecryptor pBESecretKeyDecryptor = secretKeyDecryptorBuilder.build(passPhrase);
+
+        try {
+            privateKey = pgpSecKey.extractPrivateKey(pBESecretKeyDecryptor);
+        } catch (PGPException e) {
+            throw new PGPException("invalid privateKey passPhrase: " + String.valueOf(passPhrase), e);
+        }
+
+        return privateKey;
     }
 
     /**
@@ -75,22 +109,59 @@ public class Main {
      */
 
     private static void DumpPublicKey(PGPPublicKey inPublicKey, String inPath) throws IOException {
-        ArmoredOutputStream outputStream = getOutputStream(inPath);
+        ArmoredOutputStream outputStream = getArmoredOutputStream(inPath);
         inPublicKey.encode(outputStream);
         outputStream.close();
     }
 
     /**
-     * Dump a given secret key into a file identified by its path.
+     * Dump a given secret key into 2 files:
+     * - one file that represents the PGP secret key.
+     * - one file that contains the mathematical components of the key.
+     *   The content of this file depends on the type of key (RSA, DSA or El Gamal).
      * @param inSecreteKey The secret key to dump.
-     * @param inPath Path to the target file.
+     * @param inPathPrefix Path to the target file.
+     * @param inPassPhrase The passphrase for the private key.
      * @throws IOException
+     * @throws PGPException
      */
 
-    private static void DumpSecretKey(PGPSecretKey inSecreteKey, String inPath) throws IOException {
-        ArmoredOutputStream outputStream = getOutputStream(inPath);
-        inSecreteKey.encode(outputStream);
-        outputStream.close();
+    private static void DumpSecretKey(PGPSecretKey inSecreteKey,
+                                      String inPathPrefix,
+                                      char[] inPassPhrase) throws IOException, PGPException {
+        ArmoredOutputStream outputSecretKeyStream = getArmoredOutputStream(inPathPrefix + ".pgp");
+        inSecreteKey.encode(outputSecretKeyStream);
+        outputSecretKeyStream.close();
+
+        PGPPrivateKey privateKey = extractPrivateKey(inSecreteKey, inPassPhrase);
+        BCPGKey packet = privateKey.getPrivateKeyDataPacket();
+
+        if (packet instanceof org.bouncycastle.bcpg.RSASecretBCPGKey) {
+            // @see org.bouncycastle.bcpg.RSASecretBCPGKey.encode
+            // This will dump 4 MPIs.
+            BCPGOutputStream outputStream = getBCPGOutputStream(inPathPrefix + "-private-rsa.data");
+            org.bouncycastle.bcpg.RSASecretBCPGKey key = (org.bouncycastle.bcpg.RSASecretBCPGKey)packet;
+            key.encode(outputStream);
+            outputStream.close();
+        }
+
+        if (packet instanceof org.bouncycastle.bcpg.DSASecretBCPGKey) {
+            // @see org.bouncycastle.bcpg.DSASecretBCPGKey.encode
+            // This will dump 1 MPI.
+            BCPGOutputStream outputStream = getBCPGOutputStream(inPathPrefix + "-private-dsa.data");
+            org.bouncycastle.bcpg.DSASecretBCPGKey key = (org.bouncycastle.bcpg.DSASecretBCPGKey)packet;
+            key.encode(outputStream);
+            outputStream.close();
+        }
+
+        if (packet instanceof org.bouncycastle.bcpg.ElGamalSecretBCPGKey) {
+            // @see org.bouncycastle.bcpg.ElGamalSecretBCPGKey.encode
+            // This will dump 1 MPI.
+            BCPGOutputStream outputStream = getBCPGOutputStream(inPathPrefix + "-private-elgamal.data");
+            org.bouncycastle.bcpg.ElGamalSecretBCPGKey key = (org.bouncycastle.bcpg.ElGamalSecretBCPGKey)packet;
+            key.encode(outputStream);
+            outputStream.close();
+        }
     }
 
     /**
@@ -102,11 +173,11 @@ public class Main {
 
     private static void DumpAllPublicKeys(PGPPublicKeyRing inKeyRing,
                                           String inPathPrefix) throws IOException {
-        Iterator<PGPPublicKey> pubIterator = inKeyRing.iterator();
+        Iterator<PGPPublicKey> keyIterator = inKeyRing.iterator();
         int id = 1;
         while (true) {
-            if (! pubIterator.hasNext()) break;
-            DumpPublicKey(pubIterator.next(), inPathPrefix + id++ + ".pgp");
+            if (! keyIterator.hasNext()) break;
+            DumpPublicKey(keyIterator.next(), inPathPrefix + id++ + ".pgp");
         }
     }
 
@@ -114,16 +185,20 @@ public class Main {
      * Dump all (secret) keys within a given secret keyring.
      * @param inKeyRing The secret keyring to dump.
      * @param inPathPrefix The path prefix of the target file.
+     * @param inPassPhrase The passphrase for the private keys.
      * @throws IOException
      */
 
     private static void DumpAllSecretKeys(PGPSecretKeyRing inKeyRing,
-                                          String inPathPrefix) throws IOException {
-        Iterator<PGPSecretKey> pubIterator = inKeyRing.iterator();
+                                          String inPathPrefix,
+                                          String inPassPhrase) throws IOException, PGPException {
+        Iterator<PGPSecretKey> keyIterator = inKeyRing.iterator();
+        char[] passPhrase = inPassPhrase.toCharArray();
         int id = 1;
         while (true) {
-            if (! pubIterator.hasNext()) break;
-            DumpSecretKey(pubIterator.next(), inPathPrefix + id++ + ".pgp");
+            if (! keyIterator.hasNext()) break;
+            PGPSecretKey key = keyIterator.next();
+            DumpSecretKey(key, inPathPrefix + id++, passPhrase);
         }
     }
 
@@ -225,16 +300,20 @@ public class Main {
         // Declare the provider "BC" (for Bouncy Castle).
         Security.addProvider(new BouncyCastleProvider());
 
+        String passPhrase = "password";
+
         try {
             PGPKeyPair RsaKeyPair = createRsaKeyPair();
             PGPKeyPair DsaKeyPair = createDsaKeyPair();
             PGPKeyPair ElGamalKeyPair = createElGamalKeyPair();
 
+
+
             // Create the keyring generator.
             PGPKeyPair[] keyPairs = {RsaKeyPair, DsaKeyPair, ElGamalKeyPair};
             PGPKeyRingGenerator keyRingGen = getKeyRingGenerator(keyPairs,
                     "denis@email.com",
-                    "password");
+                    passPhrase);
 
             // Generate the PGP keys.
             PGPPublicKeyRing pubRing = keyRingGen.generatePublicKeyRing();
@@ -244,7 +323,7 @@ public class Main {
             DumpKeyRing(pubRing, "public-keyring.pgp");
             DumpKeyRing(secRing, "secret-keyring.pgp");
             DumpAllPublicKeys(pubRing, "public-key-");
-            DumpAllSecretKeys(secRing, "secret-key-");
+            DumpAllSecretKeys(secRing, "secret-key-", passPhrase);
         } catch (Exception e) {
             System.out.println("Error: " + e.toString());
         }
