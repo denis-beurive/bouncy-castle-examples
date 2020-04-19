@@ -13,6 +13,11 @@ task setup {
             'bcpg-jdk15to18-1.65.jar': 'https://repo1.maven.org/maven2/org/bouncycastle/bcpg-jdk15to18/1.65/bcpg-jdk15to18-1.65.jar'
     ]
 
+    File directory = new File("${root_dir}/lib");
+    if (! directory.exists()){
+        directory.mkdir();
+    }
+
     dependencies.each {
         def f = new File("${root_dir}/lib/${it.key}")
         if (!f.exists()) {
