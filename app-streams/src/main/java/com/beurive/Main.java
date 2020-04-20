@@ -1,26 +1,45 @@
 package com.beurive;
 
-import java.io.*;
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.charset.Charset;
 
+import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.bcpg.ArmoredInputStream;
 
 public class Main {
 
-    // InputStream (java.io)
-    //    FileInputStream (java.io)
-    //        PipeInputStream in Process (java.lang)
-    //        SocketInputStream (java.net)
-    //        WDropTargetContextPeerFileStream (sun.awt.windows)
+    /**
+     * Illustrates the use of armored streams.
+     *
+     * InputStream (java.io)
+     *     ArmoredInputStream (org.bouncycastle.bcpg)
+     *
+     * OutputStream (java.io)
+     *     ArmoredOutputStream (org.bouncycastle.bcpg)
+     *
+     * @throws IOException
+     */
 
-    static private void showFileInputStream() throws FileNotFoundException, IOException {
-        FileInputStream stream;
-        String filePath = "./data/text-file.txt";
+    static private void showArmoredInputOutputStream() throws IOException {
+        String armoredFile = "./data/armored-output.txt";
+        String message = "This is a text";
 
-        byte[] buffer = new byte[10];
-        stream = new FileInputStream(filePath);
-        stream.read(buffer);
-        stream.close();
+        ArmoredOutputStream out_stream = new ArmoredOutputStream(new FileOutputStream(armoredFile));
+        out_stream.write(message.getBytes());
+        out_stream.close();
+
+        ArmoredInputStream in_stream = new ArmoredInputStream(new FileInputStream(armoredFile));
+        byte[] content = in_stream.readAllBytes();
+        assert(0 == message.compareTo(new String(content, Charset.forName("ASCII"))));
     }
 
     public static void main(String[] args) {
+        try {
+            showArmoredInputOutputStream();
+        } catch (Exception e) {
+            System.out.println("ERROR: " + e.toString());
+        }
     }
 }

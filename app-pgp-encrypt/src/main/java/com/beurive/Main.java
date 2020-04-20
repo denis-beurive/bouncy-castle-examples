@@ -110,10 +110,10 @@ public class Main {
      * @param outputFilePath Path to the output (encrypted) file.
      * @param inputFilePath Path to the file en encrypt.
      * @param keyringPath Path to the file that contains the public keyring.
-     *                    The first public usable for encryption will be used.
+     * The first public usable for encryption will be used.
      * @param armor Flag that tells the method whether the encrypted data should be armored or not.
      * @param withIntegrityCheck Flag that tells whether or not the resulting encrypted data will be protected using an
-     *                           integrity packet.
+     * integrity packet.
      * @throws IOException
      * @throws NoSuchProviderException
      * @throws PGPException
@@ -140,7 +140,7 @@ public class Main {
      * @param encryptionKey The public key to use for encryption.
      * @param armor Flag that tells the method whether the encrypted data should be armored or not.
      * @param withIntegrityCheck Flag that tells whether or not the resulting encrypted data will be protected using an
-     *                           integrity packet.
+     * integrity packet.
      * @throws IOException
      */
 

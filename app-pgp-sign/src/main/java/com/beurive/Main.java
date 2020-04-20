@@ -2,6 +2,7 @@ package com.beurive;
 
 import java.io.*;
 import java.security.Security;
+
 import java.util.Date;
 import java.util.Iterator;
 
@@ -152,7 +153,7 @@ public class Main {
         try {
             sign(documentToSign,
                     "./data/signature.pgp",
-                    "./data/secret-key.pgp",
+                    "./data/secret-keyring.pgp",
                     passPhrase);
         } catch (IOException | PGPException e) {
             System.out.println("ERROR: " + e.toString());

@@ -25,6 +25,9 @@ or
 
 Examine the signature packet:
 
-    gpg --list-packets --verbose signature.pgp
+    gpg --list-packets --verbose data/signature.pgp
     
-    
+Verify the signature:
+
+    gpg --import data/public-keyring.pgp
+    gpg --output data/document.txt --decrypt data/signature.pgp

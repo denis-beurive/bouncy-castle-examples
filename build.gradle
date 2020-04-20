@@ -31,7 +31,7 @@ task setup {
     file.createNewFile()
 
     file = new File("${root_dir}/setenv.bat")
-    file.setText("set PROJECT_ROOT_DIR=${root_dir}")
+    file.setText("set PROJECT_ROOT_DIR=${root_dir}\nREM doskey java=C:\\Users\\denis.beurive\\tools\\java\\jdk-14\\bin\\java \$*")
     file.createNewFile()
 }
 
