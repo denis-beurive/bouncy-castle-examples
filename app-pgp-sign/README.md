@@ -31,3 +31,7 @@ Verify the signature:
 
     gpg --import data/public-keyring.pgp
     gpg --output data/document.txt --decrypt data/signature.pgp
+
+# Documentation
+
+* [Signed Message](https://under-the-hood.sequoia-pgp.org/signed-message/)
