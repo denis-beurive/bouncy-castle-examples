@@ -22,6 +22,7 @@ import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.PGPOnePassSignature;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.ArmoredInputStream;
@@ -79,9 +80,14 @@ public class Main {
 
     /**
      * Sign a document with a given secret key.
-     * @param inDocumentToSign The document to sign.
+     *
+     * Remember that a PGP signature contains:
+     * - a literal data packet (the document that is being signed).
+     * - a signature.
+     *
+     * @param inDocumentToSign A string that represents the content of the document to sign.
      * @param inOutputFilePath The path to the signature file.
-     * @param inKeyRingPath The path to the key ring.
+     * @param inKeyRingPath The path to the secret key ring.
      * @param inPassPhrase The passphrase used to activate the secret key.
      * @throws IOException
      * @throws PGPException
@@ -135,17 +141,29 @@ public class Main {
         //    Write a OnePassSignaturePacket (generic signature object) into the output stream.
         //    If you look at the class OnePassSignaturePacket, you will recognise the structure of
         //    a signature packet, as defined by the RFC 4880 (https://tools.ietf.org/html/rfc4880#section-5.2).
-        //
+
         ArmoredOutputStream armoredOutputStream = getArmoredOutputStream(inOutputFilePath);
-        // [Line A]:
         BCPGOutputStream basicOut = new BCPGOutputStream(compressDataGenerator.open(armoredOutputStream));
-        // Next line:
-        // Write a OnePassSignaturePacket into the output stream "basicOut".
-        // This packet is compressed and not initialized. It is a kind of "scaffolding".
-        signerGenerator.generateOnePassVersion(false).encode(basicOut);
-        // [Line A] -> Anything written to "basicOut" will be written to the compressed (non initialized) object.
+        PGPOnePassSignature signature = signerGenerator.generateOnePassVersion(false);
+        signature.encode(basicOut);
+
+        // ┌───────────────────────┐
+        // │ Signature scaffolding │ >> basicOut
+        // └───────────────────────┘
+        //
+        // Result:
+        //
+        // signerGenerator
+        // ┊
+        // ┌───────────────────────┐
+        // │ Signature scaffolding │
+        // └───────────────────────┘
 
         // PGPLiteralDataGenerator: Generator for producing literal data packets.
+        //
+        // A Literal Data packet contains the body of a message; data that is not to be
+        // further interpreted.
+        //
         // see https://tools.ietf.org/html/rfc4880#section-5.9
         //
         // Note:
@@ -160,16 +178,22 @@ public class Main {
                 messageCharArray.length, // the length of the data that will be written.
                 new Date());             // the time of last modification we want stored.
 
-        // Therefore:
-        // lOut.write(c) -> c >> basicOut -> write to the compressed object.
+        // ┌─────────────────────┐
+        // │ Literal data packet │ >> basicOut
+        // └─────────────────────┘
+        //
+        // Result:
+        //
+        // lOut                   signerGenerator
+        // ┊                      ┊
+        // ┌─────────────────────┐┌───────────────────────┐
+        // │ Literal data packet ││ Signature scaffolding │
+        // └─────────────────────┘└───────────────────────┘
 
-        // Remember that a PGP signature contains:
-        // - The literal data packet (the document being signed).
-        // - The signature Encrypt(hash(document) + User-IDs).
-        for (byte c : messageCharArray) {
-            lOut.write(c); // write to the compressed object. -> create the literal data packet.
-            signerGenerator.update(c); // Create the signature.
-        }
+        // Write le literal data packet.
+        lOut.write(messageCharArray);
+        // Create the signature.
+        signerGenerator.update(messageCharArray);
 
         // - org.bouncycastle.openpgp.PGPLiteralDataGenerator.open():
         //   The stream created can be closed off by either calling close() on the stream or close() on
