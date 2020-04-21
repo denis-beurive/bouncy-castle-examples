@@ -83,6 +83,7 @@ Please note the terms "key" and "subkey" may be confusing.
 
 * [Anatomy of a secret key keyring](doc/pgp-packets-secret-keyring.md)
 * [Anatomy of a signature](doc/pgp-packets-signature.md)
+* [GPG commands](doc/gpg.md)
 * [OpenPGP Under The Hood](https://under-the-hood.sequoia-pgp.org/literal-data/)
 * [Key structure](https://gnupg.org/faq/subkey-cross-certify.html)
 
