@@ -60,6 +60,13 @@ public class Main {
         return new ArmoredOutputStream(new BufferedOutputStream(new FileOutputStream(new File(inPath))));
     }
 
+    /**
+     * Create a BCPGOutputStream to a file.
+     * @param inPath Path to the file.
+     * @return a new BCPGOutputStream.
+     * @throws IOException
+     */
+
     private static BCPGOutputStream getBCPGOutputStream(String inPath) throws IOException {
         return new BCPGOutputStream(new BufferedOutputStream(new FileOutputStream(new File(inPath))));
     }
@@ -278,16 +285,20 @@ public class Main {
         }
         char[] passPhrase = inPassPhrase.toCharArray();
 
-        PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
+        // See RFC 4840: [9.4. Hash Algorithms]
+        // https://tools.ietf.org/html/rfc4880#section-9.4
+        PGPDigestCalculator sha256Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA256);
         PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(
+                // See RFC 4880: [5.2.1. Signature Types]
+                // https://tools.ietf.org/html/rfc4880#section-5.2.1
                 PGPSignature.POSITIVE_CERTIFICATION,
                 inPairs[0],
                 inIdentity,
-                sha1Calc,
+                sha256Calc,
                 null,
                 null,
                 new JcaPGPContentSignerBuilder(inPairs[0].getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1),
-                new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc).setProvider("BC").build(passPhrase)
+                new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha256Calc).setProvider("BC").build(passPhrase)
         );
 
         for (int i=1; i<inPairs.length; i++) {
@@ -299,19 +310,20 @@ public class Main {
     public static void main(String[] args) {
         // Declare the provider "BC" (for Bouncy Castle).
         Security.addProvider(new BouncyCastleProvider());
-
         String passPhrase = "password";
 
         try {
+            // -------------------------------------------------------
+            // Create a key ring with 3 key pairs.
+            // -------------------------------------------------------
+
             PGPKeyPair RsaKeyPair = createRsaKeyPair();
             PGPKeyPair DsaKeyPair = createDsaKeyPair();
             PGPKeyPair ElGamalKeyPair = createElGamalKeyPair();
 
-
-
             // Create the keyring generator.
-            PGPKeyPair[] keyPairs = {RsaKeyPair, DsaKeyPair, ElGamalKeyPair};
-            PGPKeyRingGenerator keyRingGen = getKeyRingGenerator(keyPairs,
+            PGPKeyPair[] keyPairs1 = {RsaKeyPair, DsaKeyPair, ElGamalKeyPair};
+            PGPKeyRingGenerator keyRingGen = getKeyRingGenerator(keyPairs1,
                     "denis@email.com",
                     passPhrase);
 
@@ -324,6 +336,24 @@ public class Main {
             DumpKeyRing(secRing, "secret-keyring.pgp");
             DumpAllPublicKeys(pubRing, "public-key-");
             DumpAllSecretKeys(secRing, "secret-key-", passPhrase);
+
+            // -------------------------------------------------------
+            // Create a key ring with 1 key pair.
+            // -------------------------------------------------------
+
+            // Create the keyring generator.
+            PGPKeyPair[] keyPairs2 = {RsaKeyPair};
+            keyRingGen = getKeyRingGenerator(keyPairs1,
+                    "denis@email.com",
+                    passPhrase);
+
+            // Generate the PGP keys.
+            pubRing = keyRingGen.generatePublicKeyRing();
+            secRing = keyRingGen.generateSecretKeyRing();
+
+            // Dump everything.
+            DumpKeyRing(pubRing, "single-public-keyring.pgp");
+            DumpKeyRing(secRing, "single-secret-keyring.pgp");
         } catch (Exception e) {
             System.out.println("Error: " + e.toString());
         }

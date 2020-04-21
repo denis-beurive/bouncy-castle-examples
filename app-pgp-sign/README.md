@@ -23,15 +23,55 @@ or
 
 > Make sure to run `gradle setup` (at the project root level) first.
 
-Examine the signature packet:
+The program generates 2 files:
+
+* `data/detached-signature.pgp`
+* `data/signature.pgp`
+
+## GPG verifications
+
+We will check that the generated signatures can be verified using GPG.
+
+First, we need to look at the signatures in order to find out the ID of the key used to produce them.
 
     gpg --list-packets --verbose data/signature.pgp
-    
-Verify the signature:
+    gpg --list-packets --verbose data/detached-signature.pgp
 
+The ID of the key used to generate these signatures is `D09BA342BB8D5F37`.
+
+This ID should appear in the generated key rings. It should be the ID of the master key.
+Check that this is the case:
+
+    gpg --list-packets --verbose data/secret-keyring.pgp
+
+Then, we need to import this key into the GPG private and public key rings.
+    
+    gpg --import data/secret-keyring.pgp # (password: "password")
     gpg --import data/public-keyring.pgp
-    gpg --output data/document.txt --decrypt data/signature.pgp
+
+Once this is done, we must declare the key into the GPG trust database. 
+
+    gpg --edit-key D09BA342BB8D5F37
+
+Then, enter the command `trust` (see [this link](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto)).
+    
+OK. Now you can verify the signature.
+    
+    gpg --verify data/signature.pgp
+
+    $ gpg --verify data/signature.pgp
+    gpg: Remarque : l'expéditeur a demandé « à votre seule attention »
+    gpg: Signature faite le 04/21/20 11:06:08 Paris, Madrid (heure dÆÚtÚ)
+    gpg:                avec la clef RSA D09BA342BB8D5F37
+    gpg:                issuer "denis@email.com"
+    gpg: Bonne signature de « denis@email.com » [ultime]
+
+For the detached signature:
+        
+    gpg --verify data/detached-signature.pgp data/document-to-sign.txt
 
 # Documentation
 
 * [Signed Message](https://under-the-hood.sequoia-pgp.org/signed-message/)
+* [Key structure](https://gnupg.org/faq/subkey-cross-certify.html)
+* [Detached signature](https://subversivebytes.wordpress.com/2013/12/10/pgp-cryptography-with-the-legion-of-the-bouncy-castle-part-5/)

@@ -53,3 +53,8 @@ Dump the PGP public key ring:
 Dump the PGP secret key ring:
 
     gpg --list-packets --verbose secret-keyring.pgp
+
+# Documentation
+
+* [Key structure](https://gnupg.org/faq/subkey-cross-certify.html)
+* [Why does a secret key have a <ultimate> uid ?](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto)
