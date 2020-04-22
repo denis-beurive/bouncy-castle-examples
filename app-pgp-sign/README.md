@@ -23,10 +23,12 @@ or
 
 > Make sure to run `gradle setup` (at the project root level) first.
 
-The program generates 2 files:
+The program generates 4 files:
 
-* `data/detached-signature.pgp`
-* `data/signature.pgp`
+* `data/signature-master.pgp`
+* `data/signature-subkey.pgp`
+* `data/detached-signature-master.pgp`
+* `data/detached-signature-subkey.pgp`
 
 ## GPG verifications
 
@@ -34,12 +36,15 @@ We will check that the generated signatures can be verified using GPG.
 
 First, we need to look at the signatures in order to find out the ID of the key used to produce them.
 
-    gpg --list-packets --verbose data/signature.pgp
-    gpg --list-packets --verbose data/detached-signature.pgp
+    gpg --list-packets --verbose data/signature-master.pgp
+    gpg --list-packets --verbose data/signature-subkey.pgp
+    gpg --list-packets --verbose data/detached-signature-master.pgp
+    gpg --list-packets --verbose data/detached-signature-subkey.pgp
 
-The ID of the key used to generate these signatures is `D09BA342BB8D5F37`.
+The ID of the key master key is `D09BA342BB8D5F37`.
+The ID of the sub key is `767118C95940A332`.
 
-This ID should appear in the generated key rings. It should be the ID of the master key.
+This ID should appear in the generated key rings.
 Check that this is the case:
 
     gpg --list-packets --verbose data/secret-keyring.pgp
@@ -49,15 +54,17 @@ Then, we need to import this key into the GPG private and public key rings.
     gpg --import data/secret-keyring.pgp # (password: "password")
     gpg --import data/public-keyring.pgp
 
-Once this is done, we must declare the key into the GPG trust database. 
+Once this is done, we must declare the master key into the GPG trust database. 
 
     gpg --edit-key D09BA342BB8D5F37
 
 Then, enter the command `trust` (see [this link](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto)).
     
-OK. Now you can verify the signature.
     
-    gpg --verify data/signature.pgp
+    
+OK. Now you can verify the signatures.
+    
+    gpg --verify data/signature-master.pgp
 
     $ gpg --verify data/signature.pgp
     gpg: Remarque : l'expéditeur a demandé « à votre seule attention »
@@ -66,12 +73,18 @@ OK. Now you can verify the signature.
     gpg:                issuer "denis@email.com"
     gpg: Bonne signature de « denis@email.com » [ultime]
 
+    gpg --trusted-key 767118C95940A332 --verify data/signature-subkey.pgp
+
 For the detached signature:
         
-    gpg --verify data/detached-signature.pgp data/document-to-sign.txt
+    gpg --verify data/detached-signature-master.pgp data/document-to-sign.txt
+
+
+
 
 # Documentation
 
 * [Signed Message](https://under-the-hood.sequoia-pgp.org/signed-message/)
 * [Key structure](https://gnupg.org/faq/subkey-cross-certify.html)
 * [Detached signature](https://subversivebytes.wordpress.com/2013/12/10/pgp-cryptography-with-the-legion-of-the-bouncy-castle-part-5/)
+* [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html)

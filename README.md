@@ -86,6 +86,10 @@ Please note the terms "key" and "subkey" may be confusing.
 * [GPG commands](doc/gpg.md)
 * [OpenPGP Under The Hood](https://under-the-hood.sequoia-pgp.org/literal-data/)
 * [Key structure](https://gnupg.org/faq/subkey-cross-certify.html)
+* [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html)
+* [Detached signature](https://subversivebytes.wordpress.com/2013/12/10/pgp-cryptography-with-the-legion-of-the-bouncy-castle-part-5/)
+* [Why does a secret key have a <ultimate> uid ?](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto)
+* [Transitioning to a new GPG keypair](https://www.alessandromenti.it/blog/2017/01/transitioning-new-gpg-keypair.html)
 
 # Examples from the Bouncy Castle repository
 

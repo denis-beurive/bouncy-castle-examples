@@ -58,3 +58,5 @@ Dump the PGP secret key ring:
 
 * [Key structure](https://gnupg.org/faq/subkey-cross-certify.html)
 * [Why does a secret key have a <ultimate> uid ?](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto)
+* [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html)
+* [java sign public pgp key with bouncycastle](https://stackoverflow.com/questions/28591684/java-sign-public-pgp-key-with-bouncycastle)

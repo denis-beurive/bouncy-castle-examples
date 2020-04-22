@@ -3,13 +3,16 @@ package com.beurive;
 import java.io.*;
 import java.security.Security;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
@@ -52,7 +55,6 @@ public class Main {
         return new ArmoredOutputStream(new BufferedOutputStream(new FileOutputStream(new File(inPath))));
     }
 
-
     /**
      * Load a secret key ring from a given file.
      * @param inPath Path to the secret key ring.
@@ -71,11 +73,62 @@ public class Main {
         Object pgpObject;
         PGPSecretKeyRing secretKeyRing = null;
         while ((pgpObject = pgpObjectFactory.nextObject()) != null) {
-            System.out.println(pgpObject.getClass().getName());
             secretKeyRing = (PGPSecretKeyRing)pgpObject;
         }
         inputStream.close();
         return secretKeyRing;
+    }
+
+    /**
+     * Extract the master private key from a given secret key ring.
+     * @param inSecretKeyRing The secret key ring.
+     * @param inPassPhrase The passphrase required for the private key.
+     * @return The master private key.
+     * @throws PGPException
+     */
+
+    static private PGPPrivateKey getMasterPrivateKey(PGPSecretKeyRing inSecretKeyRing,
+                                                    String inPassPhrase) throws PGPException {
+        return inSecretKeyRing.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(inPassPhrase.toCharArray()));
+    }
+
+    /**
+     * Extract a private key identified by its ID, from a given secret key ring.
+     * @param inSecretKeyRing The secret key ring.
+     * @param inPassPhrase The passphrase required for the private key.
+     * @param inKeyId The secret key ID.
+     * @return If a secret key with the given ID exists, and if this key can be used to sign a document, then the corresponding private key is returned.
+     * Otherwise, the method returns the value null.
+     * @throws PGPException
+     */
+
+    static private PGPPrivateKey getPrivateKey(PGPSecretKeyRing inSecretKeyRing,
+                                              String inPassPhrase,
+                                              long inKeyId) throws PGPException {
+        PGPSecretKey key = inSecretKeyRing.getSecretKey(inKeyId);
+        if (null == key) {
+            return null;
+        }
+        if (! key.isSigningKey()) {
+            return null;
+        }
+        return key.extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(inPassPhrase.toCharArray()));
+    }
+
+    /**
+     * Return the list secret keys in a secret ring identified by its path.
+     * @param inKeyRingPath The path to the key ring.
+     * @return The list of key IDs.
+     */
+
+    static private List<PGPSecretKey> getSecretKeyIds(String inKeyRingPath) throws IOException {
+        PGPSecretKeyRing secretKeyRing = loadSecretKeyRing(inKeyRingPath);
+        Iterator<PGPSecretKey> it = secretKeyRing.getSecretKeys();
+        List<PGPSecretKey> ids = new ArrayList<PGPSecretKey>();
+        while(it.hasNext()) {
+            ids.add(it.next());
+        }
+        return ids;
     }
 
     /**
@@ -94,6 +147,8 @@ public class Main {
      * @param inDocumentToSign A string that represents the content of the document to sign.
      * @param inOutputFilePath The path to the signature file.
      * @param inKeyRingPath The path to the secret key ring.
+     * @param inSecretKeyId The ID of the secret key to use.
+     * If the given value is 0, then the master key is used.
      * @param inPassPhrase The passphrase used to activate the secret key.
      * @throws IOException
      * @throws PGPException
@@ -102,18 +157,27 @@ public class Main {
     static public void sign(String inDocumentToSign,
                             String inOutputFilePath,
                             String inKeyRingPath,
+                            long inSecretKeyId,
                             String inPassPhrase) throws IOException, PGPException {
 
         byte[] messageCharArray = inDocumentToSign.getBytes();
-        char[] passPhrase = inPassPhrase.toCharArray();
 
         // Load the private key.
         PGPSecretKeyRing secretKeyRing = loadSecretKeyRing(inKeyRingPath);
-        PGPPrivateKey privateKey = secretKeyRing.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(passPhrase));
+        PGPPrivateKey privateKey;
+        if (0 == inSecretKeyId) {
+            privateKey = getMasterPrivateKey(secretKeyRing, inPassPhrase);
+        } else {
+            privateKey = getPrivateKey(secretKeyRing, inPassPhrase, inSecretKeyId);
+            if (null == privateKey) {
+                System.out.printf("ERROR: no secret key with ID %H exists, or this key cannot be used for signing!\n", inSecretKeyId);
+                System.exit(1);
+            }
+        }
 
         // Create a signature generator.
         int keyAlgorithm = privateKey.getPublicKeyPacket().getAlgorithm();
-        int hashAlgorithm = PGPUtil.SHA1;
+        int hashAlgorithm = PGPUtil.SHA256;
         PGPSignatureGenerator signerGenerator = new PGPSignatureGenerator(
                 new JcaPGPContentSignerBuilder(keyAlgorithm, hashAlgorithm).setProvider("BC")
         );
@@ -123,7 +187,6 @@ public class Main {
         Iterator<String> it = secretKeyRing.getPublicKey().getUserIDs();
         while (it.hasNext()) {
             String userId = it.next();
-            System.out.println("Add <" + userId + ">");
             PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
             // If you look at the code of the method "setSignerUserID()", then you see that this method can be called more than once:
             //    list.add(new SignerUserID(isCritical, userID));
@@ -227,6 +290,8 @@ public class Main {
      * @param inInputFilePath Path to the file from which a signature will be generated.
      * @param inOutputFilePath Path to the output file.
      * @param inKeyRingPath Path to the secret key.
+     * @param inSecretKeyId The ID of the secret key to use.
+     * If the given value is 0, then the master key is used.
      * @param inPassPhrase Passphrase required for the secret key.
      * @throws IOException
      * @throws PGPException
@@ -235,6 +300,7 @@ public class Main {
     static public void detachSign(String inInputFilePath,
                                   String inOutputFilePath,
                                   String inKeyRingPath,
+                                  long inSecretKeyId,
                                   String inPassPhrase) throws IOException, PGPException {
 
         FileInputStream input = new FileInputStream(inInputFilePath);
@@ -242,8 +308,22 @@ public class Main {
         char[] passPhrase = inPassPhrase.toCharArray();
 
         // Load the private key.
+//        PGPSecretKeyRing secretKeyRing = loadSecretKeyRing(inKeyRingPath);
+//        PGPPrivateKey privateKey = secretKeyRing.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(passPhrase));
+//
+//        // Load the private key.
         PGPSecretKeyRing secretKeyRing = loadSecretKeyRing(inKeyRingPath);
-        PGPPrivateKey privateKey = secretKeyRing.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(passPhrase));
+        PGPPrivateKey privateKey;
+        if (0 == inSecretKeyId) {
+            privateKey = getMasterPrivateKey(secretKeyRing, inPassPhrase);
+        } else {
+            privateKey = getPrivateKey(secretKeyRing, inPassPhrase, inSecretKeyId);
+            if (null == privateKey) {
+                System.out.printf("ERROR: no secret key with ID %H exists, or this key cannot be used for signing!\n", inSecretKeyId);
+                System.exit(1);
+            }
+        }
+
 
         // Create a signature generator.
         int keyAlgorithm = privateKey.getPublicKeyPacket().getAlgorithm();
@@ -257,7 +337,6 @@ public class Main {
         Iterator<String> it = secretKeyRing.getPublicKey().getUserIDs();
         while (it.hasNext()) {
             String userId = it.next();
-            System.out.println("Add <" + userId + ">");
             PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
             // If you look at the code of the method "setSignerUserID()", then you see that this method can be called more than once:
             //    list.add(new SignerUserID(isCritical, userID));
@@ -279,19 +358,57 @@ public class Main {
 
     public static void main(String[] args) {
         // Declare the provider "BC" (for Bouncy Castle).
+        String result;
         Security.addProvider(new BouncyCastleProvider());
         String documentToSign = "Message to sign";
         String passPhrase = "password";
+        String secretKeyRing = "./data/secret-keyring.pgp";
+        String fileToSign = "./data/document-to-sign.txt";
 
         try {
+            // Print the list of key IDs in the secret key ring.
+            System.out.printf("List of key IDs in the key ring \"%s\":\n", secretKeyRing);
+            List<PGPSecretKey> keys = getSecretKeyIds(secretKeyRing);
+            for (PGPSecretKey k: keys) {
+                System.out.printf("\t- %H (sign ? %s, master ? %s)\n", k.getKeyID(), k.isSigningKey() ? "yes" : "no", k.isMasterKey() ? "yes" : "no");
+            }
+
+            // Sign with the master key.
+            result = "./data/signature-master.pgp";
+            System.out.printf("Sign <%s> using the master key => \"%s\".\n", documentToSign, result);
             sign(documentToSign,
-                    "./data/signature.pgp",
-                    "./data/secret-keyring.pgp",
+                    result,
+                    secretKeyRing,
+                    0,
                     passPhrase);
-            detachSign("data/document-to-sign.txt",
-                    "./data/detached-signature.pgp",
-                    "./data/secret-keyring.pgp",
+
+            // Sign with a subkey.
+            result = "./data/signature-subkey.pgp";
+            System.out.printf("Sign <%s> using a sub key [%H] => \"%s\".\n", documentToSign, keys.get(1).getKeyID(), result);
+            sign(documentToSign,
+                    result,
+                    secretKeyRing,
+                    keys.get(1).getKeyID(),
                     passPhrase);
+
+            // Detach sign with the master key.
+            result = "./data/detached-signature-master.pgp";
+            System.out.printf("Detach sign <%s> using the master key => \"%s\".\n", fileToSign, result);
+            detachSign(fileToSign,
+                    result,
+                    secretKeyRing,
+                    0,
+                    passPhrase);
+
+            // Detach sign with a sub key.
+            result = "./data/detached-signature-subkey.pgp";
+            System.out.printf("Detach sign <%s> using the sub key [%H] => \"%s\".\n", fileToSign, keys.get(1).getKeyID(), result);
+            detachSign(fileToSign,
+                    result,
+                    secretKeyRing,
+                    keys.get(1).getKeyID(),
+                    passPhrase);
+
         } catch (IOException | PGPException e) {
             System.out.println("ERROR: " + e.toString());
             System.exit(1);
