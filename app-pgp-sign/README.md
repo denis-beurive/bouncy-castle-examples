@@ -41,8 +41,8 @@ First, we need to look at the signatures in order to find out the ID of the key 
     gpg --list-packets --verbose data/detached-signature-master.pgp
     gpg --list-packets --verbose data/detached-signature-subkey.pgp
 
-The ID of the key master key is `D09BA342BB8D5F37`.
-The ID of the sub key is `767118C95940A332`.
+The ID of the key master key is `6DB5AB4850BC5725`.
+The ID of the sub key is `A1C01F10075E76FC`.
 
 This ID should appear in the generated key rings.
 Check that this is the case:
@@ -56,29 +56,32 @@ Then, we need to import this key into the GPG private and public key rings.
 
 Once this is done, we must declare the master key into the GPG trust database. 
 
-    gpg --edit-key D09BA342BB8D5F37
+    gpg --edit-key 6DB5AB4850BC5725
 
 Then, enter the command `trust` (see [this link](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto)).
-    
-    
-    
+
 OK. Now you can verify the signatures.
     
     gpg --verify data/signature-master.pgp
 
-    $ gpg --verify data/signature.pgp
     gpg: Remarque : l'expéditeur a demandé « à votre seule attention »
-    gpg: Signature faite le 04/21/20 11:06:08 Paris, Madrid (heure dÆÚtÚ)
-    gpg:                avec la clef RSA D09BA342BB8D5F37
+    gpg: Signature faite le 04/23/20 18:18:59 Paris, Madrid (heure dÆÚtÚ)
+    gpg:                avec la clef RSA 6DB5AB4850BC5725
     gpg:                issuer "denis@email.com"
+    gpg: vérification de la base de confiance
+    gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+    gpg: profondeur : 0  valables :   4  signées :   0
+         confiance : 0 i., 0 n.d., 0 j., 0 m., 0 t., 4 u.
     gpg: Bonne signature de « denis@email.com » [ultime]
 
-    gpg --trusted-key 767118C95940A332 --verify data/signature-subkey.pgp
+
+    gpg --verify data/signature-subkey.pgp
 
 For the detached signature:
         
     gpg --verify data/detached-signature-master.pgp data/document-to-sign.txt
 
+    gpg --verify data/detached-signature-subkey.pgp data/document-to-sign.txt
 
 
 

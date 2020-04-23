@@ -46,12 +46,9 @@ Dump the PGP secret keys:
     gpg --list-packets --verbose secret-key-2.pgp
     gpg --list-packets --verbose secret-key-3.pgp
 
-Dump the PGP public key ring:
+Dump the PGP key rings:
 
     gpg --list-packets --verbose public-keyring.pgp
-    
-Dump the PGP secret key ring:
-
     gpg --list-packets --verbose secret-keyring.pgp
 
 # Documentation
