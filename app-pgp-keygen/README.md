@@ -57,3 +57,6 @@ Dump the PGP key rings:
 * [Why does a secret key have a <ultimate> uid ?](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto)
 * [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html)
 * [java sign public pgp key with bouncycastle](https://stackoverflow.com/questions/28591684/java-sign-public-pgp-key-with-bouncycastle)
+* [PGP keys, software security, and much more threatened by new SHA1 exploit](https://arstechnica.com/information-technology/2020/01/pgp-keys-software-security-and-much-more-threatened-by-new-sha1-exploit/)
+* [SHA256 RSAkeyPairGenerator #200](https://github.com/bcgit/bc-java/issues/200)
+* [GnuPG 2.2.18 released](https://lists.gnupg.org/pipermail/gnupg-devel/2019-November/034487.html)

@@ -56,7 +56,7 @@ Then, we need to import this key into the GPG private and public key rings.
 
 Once this is done, we must declare the master key into the GPG trust database. 
 
-    gpg --edit-key 6DB5AB4850BC5725
+    gpg --edit-key ED6D403D57997E53
 
 Then, enter the command `trust` (see [this link](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto)).
 

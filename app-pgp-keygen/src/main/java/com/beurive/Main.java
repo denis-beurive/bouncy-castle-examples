@@ -281,17 +281,19 @@ public class Main {
         // See RFC 4840: [9.4. Hash Algorithms]
         // https://tools.ietf.org/html/rfc4880#section-9.4
         // Note: only SHA1 supported for key checksum calculations
+        // org.bouncycastle.openpgp.PGPException: only SHA1 supported for key checksum calculations.
         PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
         PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(
                 // See RFC 4880: [5.2.1. Signature Types]
                 // https://tools.ietf.org/html/rfc4880#section-5.2.1
-                PGPSignature.POSITIVE_CERTIFICATION,
+                // PGPSignature.POSITIVE_CERTIFICATION,
+                PGPSignature.DEFAULT_CERTIFICATION, // 0x10
                 inPairs[0],
                 inIdentity,
                 sha1Calc,
                 null,
                 null,
-                new JcaPGPContentSignerBuilder(inPairs[0].getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1),
+                new JcaPGPContentSignerBuilder(inPairs[0].getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA256),
                 new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc).setProvider("BC").build(passPhrase)
         );
 
@@ -365,16 +367,16 @@ public class Main {
             PGPSecretKeyRing secRing = keyRingGen.generateSecretKeyRing();
 
             // Cross signing
-            Iterator<PGPSecretKey> it = secRing.getSecretKeys();
-            while (it.hasNext()) {
-                PGPSecretKey secKey = it.next();
-                if (! secKey.isSigningKey()) continue;
-                if (secKey.isMasterKey()) continue;
-                System.out.printf("Cross sign master PUB [%H] with sub SEC [%H]",
-                        pubRing.getPublicKey().getKeyID(),
-                        secKey.getKeyID());
-                backSign(secKey, pubRing.getPublicKey(), passPhrase);
-            }
+//            Iterator<PGPSecretKey> it = secRing.getSecretKeys();
+//            while (it.hasNext()) {
+//                PGPSecretKey secKey = it.next();
+//                if (! secKey.isSigningKey()) continue;
+//                if (secKey.isMasterKey()) continue;
+//                System.out.printf("Cross sign master PUB [%H] with sub SEC [%H]",
+//                        pubRing.getPublicKey().getKeyID(),
+//                        secKey.getKeyID());
+//                backSign(secKey, pubRing.getPublicKey(secKey.getKeyID()), passPhrase);
+//            }
 
             // Dump everything.
             dumpKeyRing(pubRing, "public-keyring.pgp");
