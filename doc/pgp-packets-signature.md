@@ -31,8 +31,13 @@ The third packet represents a Literal Data Packet ([tag=11](https://tools.ietf.o
         raw data: 15 bytes
 
 The fourth packet represents Signature Packet ([tag=2](https://tools.ietf.org/html/rfc4880#section-4.3)):
+* `version 4`: [Version 4 Signature Packet Format](https://tools.ietf.org/html/rfc4880#section-5.2.3)
 * `sigclass 0x00`: [Signature of a binary document](https://tools.ietf.org/html/rfc4880#section-5.2.1)
-* `algo 1`: [MD5](https://tools.ietf.org/html/rfc4880#section-9.4)
+* `algo 1`: [RSA](https://tools.ietf.org/html/rfc4880#section-9.1)
+* `digest algo 8`: [SHA256](https://tools.ietf.org/html/rfc4880#section-9.4)
+* `subpkt 2`: [Signature Creation Time](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
+* `subpkt 28`: [Signer's User ID](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
+* `subpkt 16`: [Issuer](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
 
 Data:
         
