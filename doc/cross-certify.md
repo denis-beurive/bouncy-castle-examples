@@ -1,5 +1,7 @@
 ## Cross-certification
 
+See [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html).
+
 It appears that the GPG way to cross-certify a sub-key is not standard.
 Indeed, GPG uses a sub-packet which type is 33.
 But the value (33) is not defined by [RFC 4880](https://tools.ietf.org/html/rfc4880#section-5.2.3.1).
