@@ -36,7 +36,7 @@ lower 32 or 64 bits respectively of a key fingerprint. PGP uses key IDs to refer
 
 # Testing the program
 
-**WARNING** To follow the procedure describer below, you must not create a DSA sub-key.
+**WARNING** To follow the procedure described below, you must not create a DSA sub-key.
 
     352   PGPKeyPair masterRsaKeyPair = createRsaKeyPair();
     353   // **WARNING**: sub-keys of type DSA cannot be "cross-certified" using GPG 2.2.19.
