@@ -81,10 +81,15 @@ Please note the terms "key" and "subkey" may be confusing.
 
 # Documents
 
+On this repository:
+
 * [Anatomy of a secret key keyring](doc/pgp-packets-secret-keyring.md)
 * [Anatomy of a signature](doc/pgp-packets-signature.md)
 * [Cross-certification](doc/cross-certify.md)
 * [GPG commands](doc/gpg.md)
+
+On the WEB
+
 * [OpenPGP Under The Hood](https://under-the-hood.sequoia-pgp.org/literal-data/)
 * [Key structure](https://gnupg.org/faq/subkey-cross-certify.html)
 * [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html)

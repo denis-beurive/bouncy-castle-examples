@@ -28,11 +28,14 @@ Data:
     # off=295 ctb=b4 tag=13 hlen=2 plen=15
     :user ID packet: "denis@email.com"
     
-The third packet represents a signature packet ([tag=2](https://tools.ietf.org/html/rfc4880#section-5.2))    
+The third packet represents a signature packet ([tag=2](https://tools.ietf.org/html/rfc4880#section-5.2))
+* `version 4`: [Version 4 Signature Packet Format](https://tools.ietf.org/html/rfc4880#section-5.2.3)    
 * `algo=1`: [RSA (Encrypt or Sign)](https://tools.ietf.org/html/rfc4880#section-9.1)
 * `sigclass 0x13`: [Positive certification of a User ID and Public-Key packet](https://tools.ietf.org/html/rfc4880#section-5.2.1)
 * `digest algo=2`: [SHA1](https://tools.ietf.org/html/rfc4880#section-9.4) 
-    
+* `subpkt 2`: [Signature Creation Time](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
+* `subpkt 16`: [Issuer](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
+
 Data:
 
     # off=312 ctb=88 tag=2 hlen=2 plen=92
@@ -61,10 +64,13 @@ Data:
         skey[4]: [v4 protected]
         keyid: F02A1F4E95231A89
         
-The fifth packet represents a signature packet ([tag=2](https://tools.ietf.org/html/rfc4880#section-5.2))    
+The fifth packet represents a signature packet ([tag=2](https://tools.ietf.org/html/rfc4880#section-5.2))
+* `version 4`: [Version 4 Signature Packet Format](https://tools.ietf.org/html/rfc4880#section-5.2.3)    
 * `algo=1`: [RSA (Encrypt or Sign)](https://tools.ietf.org/html/rfc4880#section-9.1)
 * `sigclass 0x18`: [Subkey Binding Signature](https://tools.ietf.org/html/rfc4880#section-5.2.1)
 * `digest algo=2`: [SHA1](https://tools.ietf.org/html/rfc4880#section-9.4) 
+* `subpkt 2`: [Signature Creation Time](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
+* `subpkt 16`: [Issuer](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
 
 Data:
         
@@ -96,7 +102,12 @@ Data:
         
 
 the seventh represents a signature packet ([tag=2](https://tools.ietf.org/html/rfc4880#section-5.2))
+* `version 4`: [Version 4 Signature Packet Format](https://tools.ietf.org/html/rfc4880#section-5.2.3)
 * `algo=1`: [RSA (Encrypt or Sign)](https://tools.ietf.org/html/rfc4880#section-9.1)
+* `sigclass 0x18`: [Subkey Binding Signature](https://tools.ietf.org/html/rfc4880#section-5.2.1)
+* `digest algo=2`: [SHA1](https://tools.ietf.org/html/rfc4880#section-9.4) 
+* `subpkt 2`: [Signature Creation Time](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
+* `subpkt 16`: [Issuer](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
 
 Data:
         
@@ -107,8 +118,6 @@ Data:
         hashed subpkt 2 len 4 (sig created 2020-04-13)
         subpkt 16 len 8 (issuer key ID A37C313E3FA6FADC)
         data: A33998CEF4B7E587B1A7FD724F32ACE002C9B54E5983FD133BCDAC15B8E50E97436614ADF772B821A552DCB8317718BA58BD4EB991834905AD54173B07044029
-
-
 
 ![](images/document1.svg)
 

@@ -1,5 +1,13 @@
 ## Cross-certification
 
+It appears that the GPG way to cross-certify a sub-key is not standard.
+Indeed, GPG uses a sub-packet which type is 33.
+But the value (33) is not defined by [RFC 4880](https://tools.ietf.org/html/rfc4880#section-5.2.3.1).
+In fact, sub-packet 33 is a GPG extension (see [this post](https://lists.gnupg.org/pipermail/gnupg-users/2018-January/059881.html)).
+Therefore, do not expect to cross-certify the sub-keys using Bouncy Castle yet.
+
+## What does GPG do to cross-certify a sub-key ?
+
 * Generate a secret and a public key-ring (`data/public-keyring.pgp` and `data/secret-keyring.pgp`).
 * Dump the content of the public key-ring into a file: `gpg --list-packets --verbose data/public-keyring.pgp > data/public-keyring-list.pgp`
 * Import the key-rings into the GPG keyring: `gpg --import data/public-keyring.pgp` and `gpg --import data/secret-keyring.pgp`.
@@ -126,13 +134,21 @@ After "cross-certification":
         subpkt 16 len 8 (issuer key ID E8F4828E743BD5F3)
         data: 506F88E1D15F3DB56AE986670DE20E29F2B5A3A5D113F206AC93DD06AE250E18B626DE3D58F9291BEF6D152A7A5F6EF66D399E0A585AB04EF3BFA1B2B42E9C4D
 
+* `version 4`: [Version 4 Signature Packet Format](https://tools.ietf.org/html/rfc4880#section-5.2.3)
+* `digest algo 8`: [SHA256](https://tools.ietf.org/html/rfc4880#section-9.4)
+* `subpkt 33`: [The signing-key's fingerprint prepended by '0x04'](https://lists.gnupg.org/pipermail/gnupg-users/2018-January/059881.html).
+* `subpkt 2`: [Signature Creation Time](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
+* `subpkt 32`: [Embedded Signature](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
+* `subpkt 16`: [Issuer](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
+
 We can see what has been added to the sub-key:
 
         hashed subpkt 33 len 21 (issuer fpr v4 A2E076C534FAB58BD33822ACE8F4828E743BD5F3)
         subpkt 32 len 115 (signature: v4, class 0x19, algo 1, digest algo 8)
 
-* `class 0x19`: [primary key binding signature or back signature](https://tools.ietf.org/html/rfc4880#section-11.1)
-* `digest algo 8`: [SHA256](https://tools.ietf.org/html/rfc4880#section-9.4)
+* `subpkt 32`: [Embedded Signature](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
+  * `class 0x19`: [primary key binding signature or back signature](https://tools.ietf.org/html/rfc4880#section-11.1)
+* `subpkt 33`: [The signing-key's fingerprint prepended by '0x04'](https://lists.gnupg.org/pipermail/gnupg-users/2018-January/059881.html).
 
 From [RFC4880 section-5.2.1](https://tools.ietf.org/html/rfc4880#section-5.2.1):
 
