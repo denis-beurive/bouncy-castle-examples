@@ -170,7 +170,7 @@ public class Main {
         } else {
             privateKey = getPrivateKey(secretKeyRing, inPassPhrase, inSecretKeyId);
             if (null == privateKey) {
-                System.out.printf("ERROR: no secret key with ID %H exists, or this key cannot be used for signing!\n", inSecretKeyId);
+                System.out.printf("ERROR: no secret key with ID %X exists, or this key cannot be used for signing!\n", inSecretKeyId);
                 System.exit(1);
             }
         }
@@ -319,7 +319,7 @@ public class Main {
         } else {
             privateKey = getPrivateKey(secretKeyRing, inPassPhrase, inSecretKeyId);
             if (null == privateKey) {
-                System.out.printf("ERROR: no secret key with ID %H exists, or this key cannot be used for signing!\n", inSecretKeyId);
+                System.out.printf("ERROR: no secret key with ID %X exists, or this key cannot be used for signing!\n", inSecretKeyId);
                 System.exit(1);
             }
         }
@@ -370,7 +370,10 @@ public class Main {
             System.out.printf("List of key IDs in the key ring \"%s\":\n", secretKeyRing);
             List<PGPSecretKey> keys = getSecretKeyIds(secretKeyRing);
             for (PGPSecretKey k: keys) {
-                System.out.printf("\t- %H (sign ? %s, master ? %s)\n", k.getKeyID(), k.isSigningKey() ? "yes" : "no", k.isMasterKey() ? "yes" : "no");
+                System.out.printf("\t- %016X (sign ? %s, master ? %s)\n",
+                        k.getKeyID(),
+                        k.isSigningKey() ? "yes" : "no",
+                        k.isMasterKey() ? "yes" : "no");
             }
 
             // Sign with the master key.
@@ -384,7 +387,7 @@ public class Main {
 
             // Sign with a subkey.
             result = "./data/signature-subkey.pgp";
-            System.out.printf("Sign <%s> using a sub key [%H] => \"%s\".\n", documentToSign, keys.get(1).getKeyID(), result);
+            System.out.printf("Sign <%s> using a sub key [%X] => \"%s\".\n", documentToSign, keys.get(1).getKeyID(), result);
             sign(documentToSign,
                     result,
                     secretKeyRing,
@@ -402,7 +405,7 @@ public class Main {
 
             // Detach sign with a sub key.
             result = "./data/detached-signature-subkey.pgp";
-            System.out.printf("Detach sign <%s> using the sub key [%H] => \"%s\".\n", fileToSign, keys.get(1).getKeyID(), result);
+            System.out.printf("Detach sign <%s> using the sub key [%X] => \"%s\".\n", fileToSign, keys.get(1).getKeyID(), result);
             detachSign(fileToSign,
                     result,
                     secretKeyRing,

@@ -80,6 +80,7 @@ BASH:
     $ gpg --edit-key %KEY%
     -> "cross-certify" [ENTER]
     -> "quit"
+    -> "y" [ENTER]
 
 ## Sign a document
 
