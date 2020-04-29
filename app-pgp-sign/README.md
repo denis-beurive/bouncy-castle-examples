@@ -62,7 +62,7 @@ Once this is done, we must declare the master key into the GPG [trust database](
     -> "trust" [ENTER]
     -> "5" [ENTER]
     -> "o" [ENTER]
-    -> "quit"
+    -> "quit" [ENTER]
     
 For GPG only, you need to [cross-certify](https://gnupg.org/faq/subkey-cross-certify.html) the keys:
 

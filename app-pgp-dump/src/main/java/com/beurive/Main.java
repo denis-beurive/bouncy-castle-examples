@@ -3,13 +3,11 @@ package com.beurive;
 import java.io.*;
 import java.security.Security;
 
-import java.security.Signature;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.bouncycastle.asn1.cms.CompressedData;
 import org.bouncycastle.bcpg.*;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
@@ -41,17 +39,6 @@ public class Main {
 
     private static ArmoredOutputStream getArmoredOutputStream(String inPath) throws IOException {
         return new ArmoredOutputStream(new BufferedOutputStream(new FileOutputStream(new File(inPath))));
-    }
-
-    /**
-     * Create a BCPGInputStream from a file identified by its given path.
-     * @param inPath Path to the input file.
-     * @return An BCPGInputStream from the file which path was given.
-     * @throws IOException
-     */
-
-    private static BCPGInputStream getBCPGInputStream(String inPath) throws IOException {
-        return new BCPGInputStream(getArmoredInputStream(inPath));
     }
 
     /**
@@ -156,17 +143,6 @@ public class Main {
 
     /**
      * Sign a document with a given secret key.
-     *
-     * Remember that a PGP signature contains:
-     * - a literal data packet (the document that is being signed).
-     * - a signature.
-     *
-     * ┌───────────────────────┐
-     * │ Literal data packet   │
-     * ├───────────────────────┤
-     * │ Signature scaffolding │
-     * └───────────────────────┘
-     *
      * @param inDocumentToSign A string that represents the content of the document to sign.
      * @param inOutputFilePath The path to the signature file.
      * @param inKeyRingPath The path to the secret key ring.
@@ -211,9 +187,6 @@ public class Main {
         while (it.hasNext()) {
             String userId = it.next();
             PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
-            // If you look at the code of the method "setSignerUserID()", then you see that this method can be called more than once:
-            //    list.add(new SignerUserID(isCritical, userID));
-            // This, it is possible to set more than one user ID.
             spGen.setSignerUserID(false, userId);
             signerGenerator.setHashedSubpackets(spGen.generate());
         }
@@ -221,46 +194,13 @@ public class Main {
         PGPCompressedDataGenerator compressDataGenerator = new PGPCompressedDataGenerator(PGPCompressedData.ZLIB);
 
         // BCPGOutputStream: Basic output stream.
-        //
-        // Note:
-        //  - org.bouncycastle.openpgp.PGPCompressedDataGenerator.open(java.io.OutputStream):
-        //    Return an OutputStream which will save the data being written to the compressed
-        //    object.
-        // - org.bouncycastle.openpgp.PGPSignatureGenerator.generateOnePassVersion:
-        //    Return the one pass header associated with the current signature.
-        //    -> PGPOnePassSignature (A one pass signature object)
-        // - org.bouncycastle.openpgp.PGPOnePassSignature.encode:
-        //    Write a OnePassSignaturePacket (generic signature object) into the output stream.
-        //    If you look at the class OnePassSignaturePacket, you will recognise the structure of
-        //    a signature packet, as defined by the RFC 4880 (https://tools.ietf.org/html/rfc4880#section-5.2).
-
         ArmoredOutputStream armoredOutputStream = getArmoredOutputStream(inOutputFilePath);
         BCPGOutputStream basicOut = new BCPGOutputStream(compressDataGenerator.open(armoredOutputStream));
         PGPOnePassSignature signature = signerGenerator.generateOnePassVersion(false);
         signature.encode(basicOut);
 
-        // ┌───────────────────────┐
-        // │ Signature scaffolding │ >> basicOut
-        // └───────────────────────┘
-        //
-        // Result:
-        //
-        // signerGenerator
-        // ┊
-        // ┌───────────────────────┐
-        // │ Signature scaffolding │
-        // └───────────────────────┘
 
         // PGPLiteralDataGenerator: Generator for producing literal data packets.
-        //
-        // A Literal Data packet contains the body of a message; data that is not to be
-        // further interpreted.
-        //
-        // see https://tools.ietf.org/html/rfc4880#section-5.9
-        //
-        // Note:
-        //  - org.bouncycastle.openpgp.PGPLiteralDataGenerator.open(java.io.OutputStream, char, java.lang.String, long, java.util.Date)
-        //    Open a literal data packet, returning a stream to store the data inside the packet.
         PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
         OutputStream lOut = lGen.open(
                 basicOut,                // the underlying output stream to write the literal data packet to.
@@ -270,20 +210,9 @@ public class Main {
                 messageCharArray.length, // the length of the data that will be written.
                 new Date());             // the time of last modification we want stored.
 
-        // ┌─────────────────────┐
-        // │ Literal data packet │ >> basicOut
-        // └─────────────────────┘
-        //
-        // Result:
-        //
-        // lOut                   signerGenerator
-        // ┊                      ┊
-        // ┌─────────────────────┐┌───────────────────────┐
-        // │ Literal data packet ││ Signature scaffolding │
-        // └─────────────────────┘└───────────────────────┘
-
         // Write le literal data packet.
         lOut.write(messageCharArray);
+
         // Create the signature.
         signerGenerator.update(messageCharArray);
 
@@ -297,128 +226,35 @@ public class Main {
         lOut.close();
         // lGen.close(); // Should not be necessary.
 
-        // - org.bouncycastle.openpgp.PGPSignatureGenerator.generate:
-        //   Return a signature object containing the current signature state.
-        // - org.bouncycastle.openpgp.PGPSignature.encode(java.io.OutputStream, boolean):
-        //   Encode the signature to outStream, with trust packets stripped out if forTransfer is true.
-        //
-        // -> Generate the (fully calculated) signature and send it to "basicOut".
+        // Generate the (fully calculated) signature and send it to "basicOut".
         signerGenerator.generate().encode(basicOut);
         compressDataGenerator.close();
         armoredOutputStream.close();
     }
 
-    static private boolean verifySignature(String inSigPath, PGPPublicKeyRing pubKeyRing) throws IOException, PGPException {
-
-        // Create a stream reader for PGP objects
-        ArmoredInputStream armoredinputStream = getArmoredInputStream(inSigPath);
+    static private void listPacketTags(String inDocumentPath) throws IOException, PGPException {
+        ArmoredInputStream armoredinputStream = getArmoredInputStream(inDocumentPath);
         PGPCompressedData data = new PGPCompressedData(armoredinputStream);
-        // org.bouncycastle.openpgp.PGPCompressedData.getDataStream:
-        // Return an input stream that decompresses and returns data in the compressed packet.
         BCPGInputStream basicIn = new BCPGInputStream(data.getDataStream());
 
-        // Create a PGP object factory.
-        PGPObjectFactory pgpObjectFactory = new PGPObjectFactory(
-                basicIn, new JcaKeyFingerprintCalculator());
-
-        // $ gpg --verify data/signature-master.pgp gpg: Note: sender requested "for-your-eyes-only"
-        // gpg: Signature made Wed 29 Apr 2020 03:32:11 PM CEST
-        // gpg:                using RSA key F52712127A58D490
-        // gpg:                issuer "owner@email.com"
-        // gpg: Good signature from "owner@email.com" [ultimate]
-        PGPOnePassSignature sig = ((PGPOnePassSignatureList) pgpObjectFactory.nextObject()).get(0);
-        // You should get sig.getKeyID() = F52712127A58D490
-        PGPPublicKey pubKey = pubKeyRing.getPublicKey(sig.getKeyID());
-
-        return true;
-    }
-
-    /**
-     * Generate a detached signature.
-     * @param inInputFilePath Path to the file from which a signature will be generated.
-     * @param inOutputFilePath Path to the output file.
-     * @param inKeyRingPath Path to the secret key.
-     * @param inSecretKeyId The ID of the secret key to use.
-     * If the given value is 0, then the master key is used.
-     * @param inPassPhrase Passphrase required for the secret key.
-     * @throws IOException
-     * @throws PGPException
-     */
-
-    static public void detachSign(String inInputFilePath,
-                                  String inOutputFilePath,
-                                  String inKeyRingPath,
-                                  long inSecretKeyId,
-                                  String inPassPhrase) throws IOException, PGPException {
-
-        FileInputStream input = new FileInputStream(inInputFilePath);
-        byte[] messageCharArray = input.readAllBytes();
-
-        // Load the private key.
-//        PGPSecretKeyRing secretKeyRing = loadSecretKeyRing(inKeyRingPath);
-//        PGPPrivateKey privateKey = secretKeyRing.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(passPhrase));
-//
-//        // Load the private key.
-        PGPSecretKeyRing secretKeyRing = loadSecretKeyRing(inKeyRingPath);
-        PGPPrivateKey privateKey;
-        if (0 == inSecretKeyId) {
-            privateKey = getMasterPrivateKey(secretKeyRing, inPassPhrase);
-        } else {
-            privateKey = getPrivateKey(secretKeyRing, inPassPhrase, inSecretKeyId);
-            if (null == privateKey) {
-                System.out.printf("ERROR: no secret key with ID %X exists, or this key cannot be used for signing!\n", inSecretKeyId);
-                System.exit(1);
-            }
+        System.out.println(String.format("Tags for the PGP document \"%s\":", inDocumentPath));
+        int tag, index=1;
+        while (((tag = basicIn.nextPacketTag()) != -1)) {
+            System.out.println(String.format("  - [%d] tag = %d", index++, tag));
+            if (basicIn.readPacket() == null) break;
         }
-
-
-        // Create a signature generator.
-        int keyAlgorithm = privateKey.getPublicKeyPacket().getAlgorithm();
-        int hashAlgorithm = PGPUtil.SHA256;
-        PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
-                new JcaPGPContentSignerBuilder(keyAlgorithm, hashAlgorithm).setProvider("BC")
-        );
-        signatureGenerator.init(PGPSignature.BINARY_DOCUMENT, privateKey);
-
-        // Set the user IDs.
-        Iterator<String> it = secretKeyRing.getPublicKey().getUserIDs();
-        while (it.hasNext()) {
-            String userId = it.next();
-            PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
-            // If you look at the code of the method "setSignerUserID()", then you see that this method can be called more than once:
-            //    list.add(new SignerUserID(isCritical, userID));
-            // This, it is possible to set more than one user ID.
-            spGen.setSignerUserID(false, userId);
-            signatureGenerator.setHashedSubpackets(spGen.generate());
-        }
-
-        // BCPGOutputStream: Basic output stream.
-        ArmoredOutputStream armoredOutputStream = getArmoredOutputStream(inOutputFilePath);
-        BCPGOutputStream basicOut = new BCPGOutputStream(armoredOutputStream);
-
-        // Create the signature.
-        signatureGenerator.update(messageCharArray);
-        signatureGenerator.generate().encode(basicOut);
-        armoredOutputStream.close();
     }
-
 
     public static void main(String[] args) {
-        // Declare the provider "BC" (for Bouncy Castle).
         Security.addProvider(new BouncyCastleProvider());
-        String documentToSign = "Message to sign";
+        String documentToSign = "This the document to sign";
         String passPhrase = "password";
         String secretKeyRing = "./data/secret-keyring.pgp";
-        String publicKeyRing = "./data/public-keyring.pgp";
-        String fileToSign = "./data/document-to-sign.txt";
         String sigMaster = "./data/signature-master.pgp";
-        String sigSubKey = "./data/signature-subkey.pgp";
-        String sigDetachedMaster = "./data/detached-signature-master.pgp";
-        String sigDetachedSubKey = "./data/detached-signature-subkey.pgp";
 
         try {
             // Print the list of key IDs in the secret key ring.
-            System.out.printf("List of key IDs in the key ring \"%s\":\n", secretKeyRing);
+            System.out.printf("List of key IDs in the secret key ring \"%s\":\n", secretKeyRing);
             List<PGPSecretKey> keys = getSecretKeyIds(secretKeyRing);
             for (PGPSecretKey k: keys) {
                 System.out.printf("\t- %016X (sign ? %s, master ? %s)\n",
@@ -435,31 +271,7 @@ public class Main {
                     0,
                     passPhrase);
 
-            // Sign with a subkey.
-            System.out.printf("Sign <%s> using a sub key [%X] => \"%s\".\n", documentToSign, keys.get(1).getKeyID(), sigSubKey);
-            sign(documentToSign,
-                    sigSubKey,
-                    secretKeyRing,
-                    keys.get(1).getKeyID(),
-                    passPhrase);
-
-            // Detach sign with the master key.
-            System.out.printf("Detach sign <%s> using the master key => \"%s\".\n", fileToSign, sigDetachedMaster);
-            detachSign(fileToSign,
-                    sigDetachedMaster,
-                    secretKeyRing,
-                    0,
-                    passPhrase);
-
-            // Detach sign with a sub key.
-            System.out.printf("Detach sign <%s> using the sub key [%X] => \"%s\".\n", fileToSign, keys.get(1).getKeyID(), sigDetachedSubKey);
-            detachSign(fileToSign,
-                    sigDetachedSubKey,
-                    secretKeyRing,
-                    keys.get(1).getKeyID(),
-                    passPhrase);
-
-            verifySignature(sigMaster, loadPublicKeyRing(publicKeyRing));
+            listPacketTags(sigMaster);
 
         } catch (IOException | PGPException e) {
             e.printStackTrace();

@@ -73,7 +73,7 @@ BASH:
     -> "trust" [ENTER]
     -> "5" [ENTER]
     -> "o" [ENTER]
-    -> "quit"
+    -> "quit" [ENTER]
 
 ## Cross certify the keys
 

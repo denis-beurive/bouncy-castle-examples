@@ -2,4 +2,4 @@ rootProject.name = 'bcdoc'
 include  'app-cbc-3des', 'app-cbc-des', 'app-cfb-des', 'app-ofb-des', 'app-cbc-aes',
          'app-sha256', 'app-md5', 'app-tiger', 'app-sha512',
          'app-pgp-keygen', 'utils', 'app-pgp-keyload',
-         'app-pgp-sign', 'app-pgp-encrypt', 'app-streams'
+         'app-pgp-sign', 'app-pgp-encrypt', 'app-streams', 'app-pgp-dump'
