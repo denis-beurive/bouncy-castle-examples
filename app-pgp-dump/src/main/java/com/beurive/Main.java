@@ -197,8 +197,7 @@ public class Main {
         ArmoredOutputStream armoredOutputStream = getArmoredOutputStream(inOutputFilePath);
         BCPGOutputStream basicOut = new BCPGOutputStream(compressDataGenerator.open(armoredOutputStream));
         PGPOnePassSignature signature = signerGenerator.generateOnePassVersion(false);
-        signature.encode(basicOut);
-
+        signature.encode(basicOut); // => write the OnePassSignaturePacket (tag=4)
 
         // PGPLiteralDataGenerator: Generator for producing literal data packets.
         PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
@@ -211,9 +210,9 @@ public class Main {
                 new Date());             // the time of last modification we want stored.
 
         // Write le literal data packet.
-        lOut.write(messageCharArray);
+        lOut.write(messageCharArray); // Write the LiteralData (tag=11)
 
-        // Create the signature.
+        // Inject the data to sign into the generator (but don't generate the signature yet).
         signerGenerator.update(messageCharArray);
 
         // - org.bouncycastle.openpgp.PGPLiteralDataGenerator.open():
@@ -227,7 +226,7 @@ public class Main {
         // lGen.close(); // Should not be necessary.
 
         // Generate the (fully calculated) signature and send it to "basicOut".
-        signerGenerator.generate().encode(basicOut);
+        signerGenerator.generate().encode(basicOut); // Write the SignaturePacket (tag=2)
         compressDataGenerator.close();
         armoredOutputStream.close();
     }

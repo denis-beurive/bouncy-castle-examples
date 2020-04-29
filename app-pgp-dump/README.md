@@ -33,6 +33,12 @@ This key ring contains 3 keys:
 
 The program generates 1 file: `data/signature-master.pgp`
 
+## Code notes
+
+See function `static public void sign(...)`
+
+![](../doc/images/signature-stream1.svg)
+
 ## GPG verifications
 
 We will check that the generated signatures can be verified using GPG.
