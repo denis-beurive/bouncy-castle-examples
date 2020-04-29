@@ -89,8 +89,8 @@ BASH:
 
 ## Verify the signatures
 
-    $ gpg --default-key %KEY% --verify data/signature.sig
-    $ gpg --default-key %KEY% --verify data/detached-signature.sig data/document-to-sign.txt
+    $ gpg --verify data/signature.sig
+    $ gpg --verify data/detached-signature.sig data/document-to-sign.txt
 
 # Documents
 
