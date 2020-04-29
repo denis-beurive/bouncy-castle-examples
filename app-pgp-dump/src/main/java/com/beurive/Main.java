@@ -232,10 +232,25 @@ public class Main {
         armoredOutputStream.close();
     }
 
-    static private void listPacketTags(String inDocumentPath) throws IOException, PGPException {
+    /**
+     * Print the tags of all the packets found within a given PGP document.
+     * @param inDocumentPath Path to the PGP document.
+     * @param inCompressed Flag that tells whether the PGP document contains compressed data or not.
+     * The value true means that the PGP document contains compressed data.
+     * @throws IOException
+     * @throws PGPException
+     */
+
+    static private void listPacketTags(String inDocumentPath, boolean inCompressed) throws IOException, PGPException {
+
         ArmoredInputStream armoredinputStream = getArmoredInputStream(inDocumentPath);
-        PGPCompressedData data = new PGPCompressedData(armoredinputStream);
-        BCPGInputStream basicIn = new BCPGInputStream(data.getDataStream());
+        BCPGInputStream basicIn;
+        if (inCompressed) {
+            PGPCompressedData data = new PGPCompressedData(armoredinputStream);
+            basicIn = new BCPGInputStream(data.getDataStream());
+        } else {
+            basicIn = new BCPGInputStream(armoredinputStream);
+        }
 
         System.out.println(String.format("Tags for the PGP document \"%s\":", inDocumentPath));
         int tag, index=1;
@@ -271,7 +286,9 @@ public class Main {
                     0,
                     passPhrase);
 
-            listPacketTags(sigMaster);
+            listPacketTags(secretKeyRing, false);
+
+            listPacketTags(sigMaster, true);
 
         } catch (IOException | PGPException e) {
             e.printStackTrace();
