@@ -234,28 +234,28 @@ public class Main {
     /**
      * Print the tags of all the packets found within a given PGP document.
      * @param inDocumentPath Path to the PGP document.
-     * @param inCompressed Flag that tells whether the PGP document contains compressed data or not.
+     * @param inIsCompressed Flag that tells whether the PGP document contains compressed data or not.
      * The value true means that the PGP document contains compressed data.
      * @throws IOException
      * @throws PGPException
      */
 
-    static private void listPacketTags(String inDocumentPath, boolean inCompressed) throws IOException, PGPException {
+    static private void listPacketTags(String inDocumentPath, boolean inIsCompressed) throws IOException, PGPException {
 
         ArmoredInputStream armoredinputStream = getArmoredInputStream(inDocumentPath);
-        BCPGInputStream basicIn;
-        if (inCompressed) {
+        BCPGInputStream pgpObjectsStreamReader; // Stream reader for PGP objects
+        if (inIsCompressed) {
             PGPCompressedData data = new PGPCompressedData(armoredinputStream);
-            basicIn = new BCPGInputStream(data.getDataStream());
+            pgpObjectsStreamReader = new BCPGInputStream(data.getDataStream());
         } else {
-            basicIn = new BCPGInputStream(armoredinputStream);
+            pgpObjectsStreamReader = new BCPGInputStream(armoredinputStream);
         }
 
         System.out.println(String.format("Tags for the PGP document \"%s\":", inDocumentPath));
         int tag, index=1;
-        while (((tag = basicIn.nextPacketTag()) != -1)) {
+        while (((tag = pgpObjectsStreamReader.nextPacketTag()) != -1)) {
             System.out.println(String.format("  - [%d] tag = %d", index++, tag));
-            if (basicIn.readPacket() == null) break;
+            if (pgpObjectsStreamReader.readPacket() == null) break;
         }
     }
 
