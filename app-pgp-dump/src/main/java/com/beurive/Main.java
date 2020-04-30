@@ -281,7 +281,6 @@ public class Main {
                 System.out.printf("    length: %d\n", ldp.getRawFileName().length);
                 System.out.printf("    date: %d (%s)\n", ldp.getModificationTime(), (new Date()).getTime());
             }
-            if (null == p) break;
         }
 
 //        Packet p;
