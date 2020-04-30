@@ -59,7 +59,7 @@ Payload:
 Header: `CB27`
 
     0xCB => b11001011
-    [0]   1        packet format = 0  => new packet format
+    [0]   1        packet format = 1  => new packet format
     [5-0] 001011   packet tag    = 11 => Literal Data Packet
      
 The next byte is `0x27 = 39`
