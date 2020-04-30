@@ -12,12 +12,14 @@ import java.util.List;
 import org.bouncycastle.asn1.cms.CompressedData;
 import org.bouncycastle.bcpg.*;
 import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 
 public class Main {
 
@@ -308,30 +310,30 @@ public class Main {
         armoredOutputStream.close();
     }
 
-    static private boolean verifySignature(String inSigPath, PGPPublicKeyRing pubKeyRing) throws IOException, PGPException {
-
-        // Create a stream reader for PGP objects
-        ArmoredInputStream armoredinputStream = getArmoredInputStream(inSigPath);
-        PGPCompressedData data = new PGPCompressedData(armoredinputStream);
-        // org.bouncycastle.openpgp.PGPCompressedData.getDataStream:
-        // Return an input stream that decompresses and returns data in the compressed packet.
-        BCPGInputStream basicIn = new BCPGInputStream(data.getDataStream());
-
-        // Create a PGP object factory.
-        PGPObjectFactory pgpObjectFactory = new PGPObjectFactory(
-                basicIn, new JcaKeyFingerprintCalculator());
-
-        // $ gpg --verify data/signature-master.pgp gpg: Note: sender requested "for-your-eyes-only"
-        // gpg: Signature made Wed 29 Apr 2020 03:32:11 PM CEST
-        // gpg:                using RSA key F52712127A58D490
-        // gpg:                issuer "owner@email.com"
-        // gpg: Good signature from "owner@email.com" [ultimate]
-        PGPOnePassSignature sig = ((PGPOnePassSignatureList) pgpObjectFactory.nextObject()).get(0);
-        // You should get sig.getKeyID() = F52712127A58D490
-        PGPPublicKey pubKey = pubKeyRing.getPublicKey(sig.getKeyID());
-
-        return true;
-    }
+//    static private boolean verifySignature(String inSigPath, PGPPublicKeyRing pubKeyRing) throws IOException, PGPException {
+//
+//        // Create a stream reader for PGP objects
+//        ArmoredInputStream armoredinputStream = getArmoredInputStream(inSigPath);
+//        PGPCompressedData data = new PGPCompressedData(armoredinputStream);
+//        // org.bouncycastle.openpgp.PGPCompressedData.getDataStream:
+//        // Return an input stream that decompresses and returns data in the compressed packet.
+//        BCPGInputStream basicIn = new BCPGInputStream(data.getDataStream());
+//
+//        // Create a PGP object factory.
+//        PGPObjectFactory pgpObjectFactory = new PGPObjectFactory(
+//                basicIn, new JcaKeyFingerprintCalculator());
+//
+//        // $ gpg --verify data/signature-master.pgp gpg: Note: sender requested "for-your-eyes-only"
+//        // gpg: Signature made Wed 29 Apr 2020 03:32:11 PM CEST
+//        // gpg:                using RSA key F52712127A58D490
+//        // gpg:                issuer "owner@email.com"
+//        // gpg: Good signature from "owner@email.com" [ultimate]
+//        PGPOnePassSignature sig = ((PGPOnePassSignatureList) pgpObjectFactory.nextObject()).get(0);
+//        // You should get sig.getKeyID() = F52712127A58D490
+//        PGPPublicKey pubKey = pubKeyRing.getPublicKey(sig.getKeyID());
+//
+//        return true;
+//    }
 
     /**
      * Generate a detached signature.
@@ -402,6 +404,44 @@ public class Main {
         armoredOutputStream.close();
     }
 
+    private static boolean verifySignature(
+            String inSignatureFile,
+            PGPPublicKeyRing pubKeyRing)
+            throws Exception
+    {
+
+        // Create a stream reader for PGP objects
+        ArmoredInputStream armoredinputStream = getArmoredInputStream(inSignatureFile);
+        PGPCompressedData data = new PGPCompressedData(armoredinputStream);
+        BCPGInputStream basicIn = new BCPGInputStream(data.getDataStream());
+        JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(basicIn);
+
+        PGPOnePassSignatureList     p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
+        PGPOnePassSignature         ops = p1.get(0);
+        PGPLiteralData              p2 = (PGPLiteralData)pgpFact.nextObject();
+        InputStream                 dIn = p2.getInputStream();
+        int                         ch;
+
+        PGPPublicKey key = pubKeyRing.getPublicKey(ops.getKeyID());
+
+        FileOutputStream            out = new FileOutputStream(p2.getFileName());
+
+        ops.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), key);
+
+        while ((ch = dIn.read()) >= 0)
+        {
+            ops.update((byte)ch);
+            out.write(ch);
+        }
+
+        out.close();
+
+        PGPSignatureList            p3 = (PGPSignatureList)pgpFact.nextObject();
+
+        return ops.verify(p3.get(0));
+    }
+
+
 
     public static void main(String[] args) {
         // Declare the provider "BC" (for Bouncy Castle).
@@ -459,9 +499,14 @@ public class Main {
                     keys.get(1).getKeyID(),
                     passPhrase);
 
-            verifySignature(sigMaster, loadPublicKeyRing(publicKeyRing));
+            // Verify the signature.
+            if (verifySignature(sigMaster, loadPublicKeyRing(publicKeyRing))) {
+                System.out.printf("The signature \"%s\" is valid.\n", sigMaster);
+            } else {
+                System.out.printf("The signature \"%s\" is not valid.\n", sigMaster);
+            }
 
-        } catch (IOException | PGPException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
         }
