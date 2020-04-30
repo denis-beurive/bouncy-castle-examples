@@ -2,11 +2,9 @@ package com.beurive;
 
 import java.io.*;
 import java.security.Security;
+import java.lang.Math;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import org.bouncycastle.bcpg.*;
 import org.bouncycastle.openpgp.*;
@@ -39,6 +37,12 @@ public class Main {
 
     private static ArmoredOutputStream getArmoredOutputStream(String inPath) throws IOException {
         return new ArmoredOutputStream(new BufferedOutputStream(new FileOutputStream(new File(inPath))));
+    }
+
+    private static void armoredToBin(String inArmoredPath, String inDestinationPath) throws IOException {
+        ArmoredInputStream input = getArmoredInputStream(inArmoredPath);
+        FileOutputStream output = new FileOutputStream(inDestinationPath);
+        output.write(input.readAllBytes());
     }
 
     /**
@@ -270,6 +274,75 @@ public class Main {
         }
     }
 
+
+    static private String bytesToStringDump(byte[] inBytes,
+                                            boolean inDoesMatch,
+                                            byte inValue,
+                                            byte inMask) {
+        StringBuilder result = new StringBuilder();
+        for(byte b: inBytes) {
+            if (! inDoesMatch) {
+                result.append(String.format("%02X ", Byte.toUnsignedInt(b)));
+                continue;
+            }
+            if ((b & inMask) == inValue) {
+                if (((b & 0b11000000) >> 6) == 3) {
+                    result.append(String.format("=%02X= ", Byte.toUnsignedInt(b)));
+                } else if (((b & 0b10000000) >> 7) == 1) {
+                    result.append(String.format(".%02X. ", Byte.toUnsignedInt(b)));
+                } else {
+                    result.append(String.format(" %02X  ", Byte.toUnsignedInt(b)));
+                }
+            } else {
+                result.append(String.format(" %02X  ", Byte.toUnsignedInt(b)));
+            }
+        }
+        return result.toString();
+    }
+
+    static private void hexa(String inDocumentPath,
+                             boolean inDoesMatch,
+                             byte inValue,
+                             byte inMask) throws IOException {
+        ArmoredInputStream armoredinputStream = getArmoredInputStream(inDocumentPath);
+        byte[] data = armoredinputStream.readAllBytes();
+
+        final int byte_per_line = 16;
+        int length = data.length;
+        int line_count = (int)Math.floor(length / byte_per_line);
+        int reminder = length % byte_per_line;
+
+        StringBuilder result = new StringBuilder();
+
+        // Entire lines
+        for (int line_index=0; line_index<line_count; line_index++) {
+            int from = line_index * byte_per_line;
+            int to = from + byte_per_line;
+            byte[] line = Arrays.copyOfRange(data, from, to);
+            String printable = (new String(line)).replaceAll("\\P{Print}", ".");
+            result.append(String.format("%s | %s\n", bytesToStringDump(line, inDoesMatch, inValue, inMask), printable));
+        }
+
+        // Reminder
+        int from = line_count * byte_per_line;
+        int to = from + reminder;
+        byte[] line = Arrays.copyOfRange(data, from, to);
+        String printable = (new String(line)).replaceAll("\\P{Print}", ".");
+
+        result.append(String.format("%s%s | %s\n", bytesToStringDump(line, inDoesMatch, inValue, inMask), " ".repeat((inDoesMatch ? 5 : 3) *(byte_per_line - reminder)), printable));
+        System.out.printf("%s\n", result.toString());
+    }
+
+
+    static private void dumpRaw(String inDocumentPath) throws IOException {
+        ArmoredInputStream armoredinputStream = getArmoredInputStream(inDocumentPath);
+        byte[] data = armoredinputStream.readAllBytes();
+        System.out.printf("Dump \"%s\":\n", inDocumentPath);
+        System.out.printf("  Number of bytes: %d\n\n", data.length);
+        System.out.printf("%s\n\n", org.bouncycastle.util.encoders.Hex.toHexString(data));
+
+    }
+
     public static void main(String[] args) {
         Security.addProvider(new BouncyCastleProvider());
         String documentToSign = "This the document to sign";
@@ -277,6 +350,7 @@ public class Main {
         String secretKeyRing = "./data/secret-keyring.pgp";
         String sigMaster = "./data/signature-master.pgp";
         String sigMasterUncompressed = "./data/signature-master-uncompressed.pgp";
+        String sigMasterUncompressedBin = "./data/signature-master-uncompressed-bin.pgp";
 
         try {
             // Print the list of key IDs in the secret key ring.
@@ -307,7 +381,12 @@ public class Main {
                     passPhrase,
                     false);
 
+            armoredToBin(sigMasterUncompressed, sigMasterUncompressedBin);
             listPacketTags(secretKeyRing, false);
+
+            dumpRaw(sigMasterUncompressed);
+            hexa(sigMasterUncompressed, false, (byte)0, (byte)0);
+            hexa(sigMasterUncompressed, true, (byte)0b00010100, (byte)0b00111111);
 
             listPacketTags(sigMasterUncompressed, false);
             listPacketTags(sigMaster, true);
