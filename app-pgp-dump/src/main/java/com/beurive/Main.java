@@ -270,7 +270,8 @@ public class Main {
         int tag, index=1;
         while (((tag = pgpObjectsStreamReader.nextPacketTag()) != -1)) {
             System.out.println(String.format("  - [%d] tag = %d", index++, tag));
-            if (pgpObjectsStreamReader.readPacket() == null) break;
+            Packet p = pgpObjectsStreamReader.readPacket();
+            if (null == p) break;
         }
     }
 

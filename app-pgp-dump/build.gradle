@@ -5,5 +5,5 @@ dependencies {
     compile group: 'org.bouncycastle', name: 'bcpg-jdk15to18', version: '1.65'
 }
 
-compileJava.options.encoding = "UTF-8"
+// compileJava.options.encoding = "UTF-8"
 

@@ -184,3 +184,11 @@ We are looking for `D4`:
      E2   21   5B   65   51   1E   FA                                                | .![eQ..
 
 The second `D4` is the only one that can be the one we are looking for.
+
+We have 41 bytes in excess in the second packet (as far as BC sees it):
+
+                                             88   AD   04   00   01   08   00   17
+     05   02   5E   AB   04   4F   10   1C   6F   77   6E   65   72   40   65   6D
+     61   69   6C   2E   63   6F   6D   00   0A   09   10   F5   27   12   12   7A
+     58  
+
