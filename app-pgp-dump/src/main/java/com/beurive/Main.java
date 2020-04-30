@@ -15,6 +15,8 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import javax.xml.crypto.Data;
+
 public class Main {
 
     /**
@@ -271,8 +273,29 @@ public class Main {
         while (((tag = pgpObjectsStreamReader.nextPacketTag()) != -1)) {
             System.out.println(String.format("  - [%d] tag = %d", index++, tag));
             Packet p = pgpObjectsStreamReader.readPacket();
+            System.out.printf("    Type is: %s\n", p.getClass().getName());
+            if (p instanceof org.bouncycastle.bcpg.LiteralDataPacket) {
+                LiteralDataPacket ldp = (org.bouncycastle.bcpg.LiteralDataPacket)p;
+                System.out.printf("    File name: [%s]\n", ldp.getFileName());
+                System.out.printf("    Format: %d (%X - %c)\n", ldp.getFormat(), ldp.getFormat(), ldp.getFormat());
+                System.out.printf("    length: %d\n", ldp.getRawFileName().length);
+                System.out.printf("    date: %d (%s)\n", ldp.getModificationTime(), (new Date()).getTime());
+            }
             if (null == p) break;
         }
+
+//        Packet p;
+//        while ((p = pgpObjectsStreamReader.readPacket()) != null) {
+//            System.out.printf("    Type is: %s\n", p.getClass().getName());
+//            if (p instanceof org.bouncycastle.bcpg.LiteralDataPacket) {
+//                LiteralDataPacket ldp = (org.bouncycastle.bcpg.LiteralDataPacket)p;
+//                System.out.printf("    File name: [%s]\n", ldp.getFileName());
+//                System.out.printf("    Format: %d (%X - %c)\n", ldp.getFormat(), ldp.getFormat(), ldp.getFormat());
+//                System.out.printf("    length: %d\n", ldp.getRawFileName().length);
+//                System.out.printf("    date: %d (%s)\n", ldp.getModificationTime(), (new Date()).getTime());
+//            }
+//        }
+
     }
 
 
