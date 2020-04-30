@@ -149,6 +149,8 @@ public class Main {
      * @param inSecretKeyId The ID of the secret key to use.
      * If the given value is 0, then the master key is used.
      * @param inPassPhrase The passphrase used to activate the secret key.
+     * @param inDoCompress Tells whether the signature must be compressed or not.
+     * This value true means that the signature must be compressed.
      * @throws IOException
      * @throws PGPException
      */
@@ -157,7 +159,8 @@ public class Main {
                             String inOutputFilePath,
                             String inKeyRingPath,
                             long inSecretKeyId,
-                            String inPassPhrase) throws IOException, PGPException {
+                            String inPassPhrase,
+                            boolean inDoCompress) throws IOException, PGPException {
 
         byte[] messageCharArray = inDocumentToSign.getBytes();
 
@@ -191,11 +194,17 @@ public class Main {
             signerGenerator.setHashedSubpackets(spGen.generate());
         }
 
-        PGPCompressedDataGenerator compressDataGenerator = new PGPCompressedDataGenerator(PGPCompressedData.ZLIB);
-
-        // BCPGOutputStream: Basic output stream.
+        // Create the Basic output stream.
+        BCPGOutputStream basicOut;
+        PGPCompressedDataGenerator compressDataGenerator = null;
         ArmoredOutputStream armoredOutputStream = getArmoredOutputStream(inOutputFilePath);
-        BCPGOutputStream basicOut = new BCPGOutputStream(compressDataGenerator.open(armoredOutputStream));
+        if (inDoCompress) {
+            compressDataGenerator = new PGPCompressedDataGenerator(PGPCompressedData.ZLIB);
+            basicOut = new BCPGOutputStream(compressDataGenerator.open(armoredOutputStream));
+        } else {
+            basicOut = new BCPGOutputStream(armoredOutputStream);
+        }
+
         PGPOnePassSignature signature = signerGenerator.generateOnePassVersion(false);
         signature.encode(basicOut); // => write the OnePassSignaturePacket (tag=4)
 
@@ -227,7 +236,9 @@ public class Main {
 
         // Generate the (fully calculated) signature and send it to "basicOut".
         signerGenerator.generate().encode(basicOut); // Write the SignaturePacket (tag=2)
-        compressDataGenerator.close();
+        if (inDoCompress) {
+            compressDataGenerator.close();
+        }
         armoredOutputStream.close();
     }
 
@@ -265,6 +276,7 @@ public class Main {
         String passPhrase = "password";
         String secretKeyRing = "./data/secret-keyring.pgp";
         String sigMaster = "./data/signature-master.pgp";
+        String sigMasterUncompressed = "./data/signature-master-uncompressed.pgp";
 
         try {
             // Print the list of key IDs in the secret key ring.
@@ -278,15 +290,26 @@ public class Main {
             }
 
             // Sign with the master key.
-            System.out.printf("Sign <%s> using the master key => \"%s\".\n", documentToSign, sigMaster);
+            System.out.printf("Compress-sign <%s> using the master key => \"%s\".\n", documentToSign, sigMaster);
             sign(documentToSign,
                     sigMaster,
                     secretKeyRing,
                     0,
-                    passPhrase);
+                    passPhrase,
+            true);
+            listPacketTags(secretKeyRing, false);
+
+            System.out.printf("Uncompress-sign <%s> using the master key => \"%s\".\n", documentToSign, sigMasterUncompressed);
+            sign(documentToSign,
+                    sigMasterUncompressed,
+                    secretKeyRing,
+                    0,
+                    passPhrase,
+                    false);
 
             listPacketTags(secretKeyRing, false);
 
+            listPacketTags(sigMasterUncompressed, false);
             listPacketTags(sigMaster, true);
 
         } catch (IOException | PGPException e) {
