@@ -1,1 +1,4 @@
-armored-output.txt
+.
+!*.pgp
+document.txt.bpg
+!.gitignore

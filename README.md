@@ -72,12 +72,12 @@ Please note the terms "key" and "subkey" may be confusing.
 >
 > So, "is it possible to have a key that's used for encryption and signing without any subkey at all?" The answer here is no, because all keypairs on a key are subkeys. Even if there's only one of them. 
 
-| Action               | Example                             | Notes                                  |
-|----------------------|-------------------------------------|-----------------------------------------
-| Key generation       | [app-pgp-keygen/](app-pgp-keygen)   | see note about key/keyring             |
-| PGP Document loading | [app-pgp-keyload/](app-pgp-keyload) | key, keyring, encrypted document...    |
-| Signing              | [app-pgp-sign/](app-pgp-sign)       | Signing                                |
-| Encryption           | [app-pgp-encrypt/](app-pgp-encrypt) | Encrypt a file                         |
+| Action               | Example                             | Notes                                                                              |
+|----------------------|-------------------------------------|------------------------------------------------------------------------------------|
+| Key generation       | [app-pgp-keygen/](app-pgp-keygen)   | see note about key/keyring                                                         |
+| Streams              | [app-streams](app-streams)          | Armored Input/Output streams, Basic PGP Input/Output streams, JcaPGPObjectFactory  |
+| Signing              | [app-pgp-sign/](app-pgp-sign)       | Create and verify signatures                                                       |
+| Encryption           | [app-pgp-encrypt/](app-pgp-encrypt) | Encrypt a file                                                                     |
 
 # Documents
 
