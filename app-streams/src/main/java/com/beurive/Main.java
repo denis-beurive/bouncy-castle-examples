@@ -257,12 +257,20 @@ public class Main {
     static private String dumpPGPOnePassSignatureList(PGPOnePassSignatureList o, String inIndent) throws IOException {
         StringBuilder res = new StringBuilder(String.format("%sPGPOnePassSignatureList:\n", inIndent));
         res.append(String.format("%s\tIs empty: %s\n", inIndent, o.isEmpty() ? "yes" : "no"));
-        res.append(String.format("%s\tPGPOnePassSignature list:\n", inIndent));
-        res.append(String.format("%s", res.toString()));
+        res.append(String.format("%s\tSize: %d\n", inIndent, o.size()));
         Iterator<PGPOnePassSignature> sigs = o.iterator();
+
+        StringBuilder sub = new StringBuilder();
+        boolean hasSig = false;
         while (sigs.hasNext()) {
-            res.append(dumpPGPOnePassSignature(sigs.next(), String.format("%s\t", inIndent)));
+            hasSig = true;
+            sub.append(dumpPGPOnePassSignature(sigs.next(), String.format("%s\t\t", inIndent)));
         }
+        if (hasSig) {
+            res.append(String.format("%s\tPGPOnePassSignature list:\n", inIndent));
+            res.append(sub.toString());
+        }
+
         return res.toString();
     }
 

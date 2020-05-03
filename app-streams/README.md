@@ -105,16 +105,14 @@ Result:
             Algorithm: 2
         PGPOnePassSignatureList:
             Is empty: no
+            Size: 1
             PGPOnePassSignature list:
-        PGPOnePassSignatureList:
-            Is empty: no
-            PGPOnePassSignature list:
-            PGPOnePassSignature:
-                ID: F52712127A58D490:
-                Type: 0:
-                Hash algorithm: 2:
-                Key algorithm: 1:
-                Data length: 15:
+                PGPOnePassSignature:
+                    ID: F52712127A58D490:
+                    Type: 0:
+                    Hash algorithm: 2:
+                    Key algorithm: 1:
+                    Data length: 15:
         PGPLiteralData:
             Format: 98
             File name: document.txt
@@ -147,5 +145,3 @@ Result:
                         Is critical: no
                         Data length: 8
     ====================================================
-
-
