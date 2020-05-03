@@ -295,7 +295,6 @@ public class Main {
         List<Object> unexpected = new ArrayList<>();
         Object o;
         while ((o = pgpFact.nextObject()) != null) {
-            System.out.printf("- %s\n", o.getClass().getName());
 
             // Please note the line:
             // pgpFact = new JcaPGPObjectFactory(obj.getDataStream());
