@@ -2,6 +2,7 @@ package com.beurive;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -9,6 +10,7 @@ import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.util.Arrays;
 
 public class Main {
 
@@ -90,6 +92,142 @@ public class Main {
         assert decompressedDocument.equals(document);
     }
 
+    static private void dumpPGPSignature(PGPSignature o, String inIndent) {
+        StringBuilder res = new StringBuilder(String.format("%sPGPSignature:\n", inIndent));
+        res.append(String.format("%s\tVersion: %d\n", inIndent, o.getVersion()));
+        res.append(String.format("%s\tCreation time: %s\n", inIndent, o.getCreationTime().toString()));
+        res.append(String.format("%s\tHash Algorithm: %d\n", inIndent, o.getHashAlgorithm()));
+        res.append(String.format("%s\tKey Algorithm: %d\n", inIndent, o.getKeyAlgorithm()));
+        res.append(String.format("%s\tKey ID: %X\n", inIndent, o.getKeyID()));
+        res.append(String.format("%s\tType: %d\n", inIndent, o.getSignatureType()));
+        res.append(String.format("%s\tCertification ? %s\n", inIndent, o.isCertification() ? "yes" : "no"));
+        res.append(String.format("%s\tHas sub packets ? %s\n", inIndent, o.hasSubpackets() ? "yes" : "no"));
+        System.out.printf("%s", res.toString());
+    }
+
+    static private void dumpPGPSignatureList(PGPSignatureList o, String inIndent) {
+        StringBuilder res = new StringBuilder(String.format("%sPGPSignatureList:\n", inIndent));
+        res.append(String.format("%s\tNumber of signatures: %d\n", inIndent, o.size()));
+        res.append(String.format("%s\tSignatures:\n", inIndent));
+        System.out.printf("%s", res.toString());
+        for(PGPSignature s: o) {
+            dumpPGPSignature(s, String.format("%s\t", inIndent));
+        }
+    }
+
+    static private void dumpPGPSecretKey(PGPSecretKey o, String inIndent) {
+        StringBuilder res = new StringBuilder(String.format("%sPGPSecretKey:\n", inIndent));
+        res.append(String.format("%s\tID: %X\n", inIndent, o.getKeyID()));
+        res.append(String.format("%s\tIs master ley ? %s\n", inIndent, o.isMasterKey() ? "yes" : "no"));
+        res.append(String.format("%s\tIs signing ley ? %s\n", inIndent, o.isSigningKey() ? "yes" : "no"));
+        res.append(String.format("%s\tIs empty ? %s\n", inIndent, o.isPrivateKeyEmpty() ? "yes" : "no"));
+        res.append(String.format("%s\tEncryption algorithm: %d\n", inIndent, o.getKeyEncryptionAlgorithm()));
+        res.append(String.format("%s\tUser IDs:\n", inIndent));
+        Iterator<String> id = o.getUserIDs();
+        while (id.hasNext()) {
+            res.append(String.format("%s\t\tUser: %s\n", inIndent, id.next()));
+        }
+        System.out.printf("%s", res.toString());
+    }
+
+    static private void dumpPGPSecretKeyRing(PGPSecretKeyRing o, String inIndent) {
+        StringBuilder res = new StringBuilder(String.format("%sPGPSecretKeyRing:\n", inIndent));
+        System.out.printf("%s", res.toString());
+        for(PGPSecretKey s: o) {
+            dumpPGPSecretKey(s, String.format("%s\t", inIndent));
+        }
+    }
+
+    static private void dumpPGPPublicKey(PGPPublicKey o, String inIndent) {
+        StringBuilder res = new StringBuilder(String.format("%sPGPPublicKey:\n", inIndent));
+        res.append(String.format("%s\tID: %X\n", inIndent, o.getKeyID()));
+        res.append(String.format("%s\tVersion: %d\n", inIndent, o.getVersion()));
+        res.append(String.format("%s\tValid seconds: %d\n", inIndent, o.getValidSeconds()));
+        res.append(String.format("%s\tAlgorithm: %d\n", inIndent, o.getAlgorithm()));
+        res.append(String.format("%s\tBit strength: %d\n", inIndent, o.getBitStrength()));
+        res.append(String.format("%s\tBit creation time: %s\n", inIndent, o.getCreationTime().toString()));
+        res.append(String.format("%s\tFingerprint: %s\n", inIndent, new String(o.getFingerprint())));
+        res.append(String.format("%s\tUser IDs:\n", inIndent));
+        Iterator<String> users = o.getUserIDs();
+        while(users.hasNext()) {
+            res.append(String.format("%s\t\t%s\n", inIndent, users.next()));
+        }
+        res.append(String.format("%s\tSignatures:\n", inIndent));
+        System.out.printf("%s", res.toString());
+        Iterator<PGPSignature> sigs = o.getSignatures();
+        while (sigs.hasNext()) {
+            dumpPGPSignature(sigs.next(), String.format("%s\t", inIndent));
+        }
+    }
+
+    static private void dumpPGPPublicKeyRing(PGPPublicKeyRing o, String inIndent) {
+        StringBuilder res = new StringBuilder(String.format("%sPGPPublicKeyRing:\n", inIndent));
+        res.append(String.format("%s\tPublic keys:\n", inIndent));
+        System.out.printf("%s", res.toString());
+        Iterator<PGPPublicKey> keys = o.getPublicKeys();
+        while(keys.hasNext()) {
+            dumpPGPPublicKey(keys.next(), String.format("%s\t", inIndent));
+        }
+    }
+
+    static private void dumpPGPCompressedData(PGPCompressedData o, String inIndent) throws PGPException, IOException {
+        StringBuilder res = new StringBuilder(String.format("%sPGPCompressedData:\n", inIndent));
+        res.append(String.format("%s\tAlgorithm: %d\n", inIndent, o.getAlgorithm()));
+        res.append(String.format("%s\tData length: %d\n", inIndent, o.getDataStream().readAllBytes().length));
+        System.out.printf("%s", res.toString());
+    }
+
+    static private void dumpPGPLiteralData(PGPLiteralData o, String inIndent) throws IOException {
+        StringBuilder res = new StringBuilder(String.format("%sPGPLiteralData:\n", inIndent));
+        res.append(String.format("%s\tFormat: %d\n", inIndent, o.getFormat()));
+        res.append(String.format("%s\tFile name: %s\n", inIndent, o.getFileName()));
+        res.append(String.format("%s\tModification time: %s\n", inIndent, o.getModificationTime().toString()));
+        res.append(String.format("%s\tData length: %d\n", inIndent, o.getInputStream().readAllBytes().length));
+        System.out.printf("%s", res.toString());
+    }
+
+    static private void dumpPGPEncryptedData(PGPEncryptedData o, String inIndent) throws IOException {
+        StringBuilder res = new StringBuilder(String.format("%sPGPEncryptedData:\n", inIndent));
+        res.append(String.format("%s\tIntegrity protected ? %s\n", inIndent, o.isIntegrityProtected() ? "yes" : "no"));
+        res.append(String.format("%s\tData length: %d\n", inIndent, o.getInputStream().readAllBytes().length));
+        System.out.printf("%s", res.toString());
+    }
+
+    static private void dumpPGPEncryptedDataList(PGPEncryptedDataList o, String inIndent) throws IOException {
+        StringBuilder res = new StringBuilder(String.format("%sPGPEncryptedDataList:\n", inIndent));
+        Iterator<PGPEncryptedData> data = o.getEncryptedDataObjects();
+        res.append(String.format("%s\tEncrypted data list:\n", inIndent));
+        System.out.printf("%s", res.toString());
+        while (data.hasNext()) {
+            dumpPGPEncryptedData(data.next(), String.format("%s\t", inIndent));
+        }
+    }
+
+    static private void dumpPGPOnePassSignature(PGPOnePassSignature o, String inIndent) throws IOException {
+        StringBuilder res = new StringBuilder(String.format("%sPGPOnePassSignature:\n", inIndent));
+        res.append(String.format("%s\tID: %X:\n", inIndent, o.getKeyID()));
+        res.append(String.format("%s\tType: %d:\n", inIndent, o.getSignatureType()));
+        res.append(String.format("%s\tHash algorithm: %d:\n", inIndent, o.getHashAlgorithm()));
+        res.append(String.format("%s\tKey algorithm: %d:\n", inIndent, o.getKeyAlgorithm()));
+        res.append(String.format("%s\tData length: %d:\n", inIndent, o.getEncoded().length));
+        System.out.printf("%s", res.toString());
+    }
+
+    static private void dumpPGPOnePassSignatureList(PGPOnePassSignatureList o, String inIndent) throws IOException {
+        StringBuilder res = new StringBuilder(String.format("%sPGPOnePassSignatureList:\n", inIndent));
+        res.append(String.format("%s\tIs empty: %s\n", inIndent, o.isEmpty() ? "yes" : "no"));
+        res.append(String.format("%s\tPGPOnePassSignature list:\n", inIndent));
+        System.out.printf("%s", res.toString());
+        Iterator<PGPOnePassSignature> sigs = o.iterator();
+        while (sigs.hasNext()) {
+            dumpPGPOnePassSignature(sigs.next(), String.format("%s\t", inIndent));
+        }
+    }
+
+    static private void dumpPGPMarker(PGPMarker o, String inIndent) {
+        System.out.printf("%sPGPMarker: %s\n", inIndent, o.getClass().getName());
+    }
+
     /**
      * Illustrates the use of BCPGInputStream / JcaPGPObjectFactory.
      * This method "dumps" the structure of a given PGP document identified by its path.
@@ -110,199 +248,52 @@ public class Main {
         pgpObjectsReader = new BCPGInputStream(armoredInputStream);
         JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(pgpObjectsReader);
 
-        List<PGPSignature> pgpSignatureList = new ArrayList<>();
-        List<PGPSignatureList> pgpSignatureListList = new ArrayList<>();
-        List<PGPSecretKeyRing> pgpSecretKeyRingList = new ArrayList<>();
-        List<PGPPublicKeyRing> publicKeyRingList = new ArrayList<>();
-        List<PGPCompressedData> pgpCompressedDataList = new ArrayList<>();
-        List<PGPLiteralData> pgpLiteralDataList = new ArrayList<>();
-        List<PGPEncryptedData> pgpEncryptedDataList = new ArrayList<>();
-        List<PGPEncryptedDataList> pgpEncryptedDataListList = new ArrayList<>();
-        List<PGPOnePassSignature> pgpOnePassSignatureList = new ArrayList<>();
-        List<PGPOnePassSignatureList> pgpOnePassSignatureListList = new ArrayList<>();
-        List<PGPMarker> pgpMarkerList = new ArrayList<>();
+        // Dump
+        System.out.printf("%s:\n", InPgpDocument);
         List<Object> unexpected = new ArrayList<>();
-
         Object o;
         while ((o = pgpFact.nextObject()) != null) {
             System.out.printf("- %s\n", o.getClass().getName());
-            if (o instanceof PGPSignature) {
-                // No stream
-                pgpSignatureList.add((PGPSignature)o);
-                continue; }
-            if (o instanceof PGPSignatureList) {
-                // No stream
-                PGPSignatureList obj = (PGPSignatureList)o;
-                pgpSignatureListList.add(obj);
-                for (PGPSignature signature: obj) {
-                    // ...
-                }
-                continue; }
-            if (o instanceof PGPSecretKeyRing) {
-                // No stream
-                PGPSecretKeyRing obj = (PGPSecretKeyRing)o;
-                pgpSecretKeyRingList.add(obj);
-                for (PGPSecretKey secretKey: obj) {
-                    // ...
-                }
-                continue; }
-            if (o instanceof PGPPublicKeyRing) {
-                // No stream
-                PGPPublicKeyRing obj = (PGPPublicKeyRing)o;
-                publicKeyRingList.add(obj);
-                for (PGPPublicKey publicKey: obj) {
-                    // ...
-                }
-                continue; }
+
+            // Please note the line:
+            // pgpFact = new JcaPGPObjectFactory(obj.getDataStream());
             if (o instanceof PGPCompressedData) {
-                // Has stream
+                // Has data stream
                 PGPCompressedData obj = (PGPCompressedData)o;
-                pgpCompressedDataList.add(obj);
-                // Reassign the input stream of the PGP Object Factory.
+                dumpPGPCompressedData(obj, "\t");
                 pgpFact = new JcaPGPObjectFactory(obj.getDataStream());
                 continue; }
+
+            if (o instanceof PGPSignature) {
+                dumpPGPSignature((PGPSignature)o, "\t");
+                continue; }
+            if (o instanceof PGPSignatureList) {
+                dumpPGPSignatureList((PGPSignatureList)o, "\t");
+                continue; }
+            if (o instanceof PGPSecretKeyRing) {
+                dumpPGPSecretKeyRing((PGPSecretKeyRing)o, "\t");
+                continue; }
+            if (o instanceof PGPPublicKeyRing) {
+                dumpPGPPublicKeyRing((PGPPublicKeyRing)o, "\t");
+                continue; }
             if (o instanceof PGPLiteralData) {
-                // Has stream
-                PGPLiteralData obj = (PGPLiteralData)o;
-                pgpLiteralDataList.add(obj);
-                InputStream dataIn = obj.getInputStream();
-                // Consume the data bytes from the object.
-                dataIn.readAllBytes();
+                dumpPGPLiteralData((PGPLiteralData)o, "\t");
                 continue; }
             if (o instanceof PGPEncryptedDataList) {
                 // Has stream
-                PGPEncryptedDataList obj = (PGPEncryptedDataList)o;
-                pgpEncryptedDataListList.add(obj);
-                for (PGPEncryptedData encryptedData : obj) {
-                    pgpEncryptedDataList.add(encryptedData);
-                    InputStream encryptedDataStream = encryptedData.getInputStream();
-                    // Consume the data bytes from the object.
-                    encryptedDataStream.readAllBytes(); // consume bytes.
-                }
+                dumpPGPEncryptedDataList((PGPEncryptedDataList)o, "\t");
                 continue; }
             if (o instanceof PGPOnePassSignature) {
-                // No stream
-                pgpOnePassSignatureList.add((PGPOnePassSignature)o);
+                dumpPGPOnePassSignature((PGPOnePassSignature)o, "\t");
                 continue; }
             if (o instanceof PGPOnePassSignatureList) {
-                // No stream
-                PGPOnePassSignatureList obj = (PGPOnePassSignatureList)o;
-                pgpOnePassSignatureListList.add(obj);
-                for (PGPOnePassSignature onePassSignature: obj) {
-                    // ...
-                }
+                dumpPGPOnePassSignatureList((PGPOnePassSignatureList)o, "\t");
                 continue; }
             if (o instanceof PGPMarker) {
-                // No stream
-                pgpMarkerList.add((PGPMarker)o);
+                dumpPGPMarker((PGPMarker)o, "\t");
                 continue; }
             unexpected.add(o);
         }
-
-        System.out.printf("%s:\n", InPgpDocument);
-
-        if (pgpSignatureList.size() > 0) {
-            System.out.print("\tPGPSignature:\n");
-            for (Object e : pgpSignatureList.toArray()) {
-                PGPSignature obj = (PGPSignature)e;
-                System.out.printf("\t\tKey: %X\n", obj.getKeyID());
-                System.out.printf("\t\tVersion: %d\n", obj.getVersion());
-            }
-        }
-
-        if (pgpCompressedDataList.size() > 0) {
-            System.out.print("\tPgpCompressedDataList:\n");
-            for (Object e : pgpCompressedDataList.toArray()) {
-                PGPCompressedData obj = (PGPCompressedData)e;
-                System.out.printf("\t\tAlgorithm %d:\n", obj.getAlgorithm());
-            }
-        }
-
-        if (pgpSignatureListList.size() > 0) {
-            System.out.print("\tPGPSignatureList:\n");
-            for (Object e : pgpSignatureListList.toArray()) {
-                PGPSignatureList obj = (PGPSignatureList)e;
-                System.out.printf("\t\tSize: %d\n", obj.size());
-            }
-        }
-
-        if (pgpSecretKeyRingList.size() > 0) {
-            System.out.print("\tPGPSecretKeyRing:\n");
-            for (Object e : pgpSecretKeyRingList.toArray()) {
-                PGPSecretKeyRing obj = (PGPSecretKeyRing)e;
-                System.out.printf("\t\tPublic key ID: %X\n", obj.getPublicKey().getKeyID());
-                System.out.printf("\t\tSecret key ID: %X\n", obj.getSecretKey().getKeyID());
-            }
-        }
-
-        if (publicKeyRingList.size() > 0) {
-            System.out.print("\tPGPPublicKeyRing:\n");
-            for (Object e : publicKeyRingList.toArray()) {
-                PGPPublicKeyRing obj = (PGPPublicKeyRing)e;
-                System.out.printf("\t\tPublic key ID: %X\n", obj.getPublicKey().getKeyID());
-            }
-        }
-
-        if (pgpLiteralDataList.size() > 0) {
-            System.out.print("\tPGPLiteralData:\n");
-            for (Object e : pgpLiteralDataList.toArray()) {
-                PGPLiteralData obj = (PGPLiteralData)e;
-                System.out.printf("\t\tFile name: %s\n", obj.getFileName());
-            }
-        }
-
-        if (pgpLiteralDataList.size() > 0) {
-            System.out.print("\tPGPCompressedData:\n");
-            for (Object e : pgpLiteralDataList.toArray()) {
-                PGPLiteralData obj = (PGPLiteralData)e;
-                System.out.printf("\t\tFile name: %s\n", obj.getFileName());
-                System.out.printf("\t\tFormat: %d\n", obj.getFormat());
-                System.out.printf("\t\tModification time: %s\n", obj.getModificationTime().toString());
-            }
-        }
-
-        if (pgpEncryptedDataListList.size() > 0) {
-            System.out.print("\tPGPEncryptedDataList:\n");
-            for (Object e : pgpEncryptedDataListList.toArray()) {
-                PGPEncryptedDataList obj = (PGPEncryptedDataList)e;
-                System.out.printf("\t\tSize: %d\n", obj.size());
-            }
-        }
-
-        if (pgpOnePassSignatureList.size() > 0) {
-            System.out.print("\tPGPOnePassSignature:\n");
-            for (Object e : pgpOnePassSignatureList.toArray()) {
-                PGPOnePassSignature obj = (PGPOnePassSignature)e;
-                System.out.printf("\t\tType: %d\n", obj.getSignatureType());
-                System.out.printf("\t\tHash algorithm: %d\n", obj.getHashAlgorithm());
-                System.out.printf("\t\tKey ID: %X\n", obj.getKeyID());
-            }
-        }
-
-        if (pgpOnePassSignatureListList.size() > 0) {
-            System.out.print("\tPGPOnePassSignatureList:\n");
-            for (Object e : pgpOnePassSignatureListList.toArray()) {
-                PGPOnePassSignatureList obj = (PGPOnePassSignatureList)e;
-                System.out.printf("\t\tSize: %d\n", obj.size());
-            }
-        }
-
-        if (pgpMarkerList.size() > 0) {
-            System.out.print("\tPGPMarker:\n");
-            for (Object e : pgpMarkerList.toArray()) {
-                PGPMarker obj = (PGPMarker)e;
-                System.out.printf("\t\tHash Code: %d\n", obj.hashCode());
-            }
-        }
-
-        if (pgpEncryptedDataList.size() > 0) {
-            System.out.print("\tPGPEncryptedData:\n");
-            for (Object e : pgpEncryptedDataList.toArray()) {
-                PGPEncryptedData obj = (PGPEncryptedData)e;
-                System.out.printf("\t\tHash Code: %d\n", obj.hashCode());
-            }
-        }
-
         if (unexpected.size() > 0) {
             System.out.print("\tUnexpected:\n");
             for (Object e : unexpected.toArray()) {
@@ -313,12 +304,18 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            showArmoredStreams();
             showByteArrayStreams();
             showCompression();
+
+            System.out.println("====================================================");
+            showArmoredStreams();
+            System.out.println("====================================================");
             showBCPGInputStream("data/secret-keyring.pgp");
+            System.out.println("====================================================");
             showBCPGInputStream("data/detached-signature.pgp");
+            System.out.println("====================================================");
             showBCPGInputStream("data/document.txt.bpg");
+            System.out.println("====================================================");
         } catch (Exception e) {
             e.printStackTrace();
         }
