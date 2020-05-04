@@ -107,7 +107,7 @@ public class Main {
         return res.toString();
     }
 
-    static private String dumpPGPSignature(PGPSignature o, String inIndent) {
+    static private String dumpPGPSignature(PGPSignature o, String inIndent) throws PGPException {
         // No stream
         StringBuilder res = new StringBuilder(String.format("%sPGPSignature:\n", inIndent));
         res.append(String.format("%s\tVersion: %d\n", inIndent, o.getVersion()));
@@ -129,7 +129,7 @@ public class Main {
         return res.toString();
     }
 
-    static private String dumpPGPSignatureList(PGPSignatureList o, String inIndent) {
+    static private String dumpPGPSignatureList(PGPSignatureList o, String inIndent) throws PGPException {
         // No stream
         StringBuilder res = new StringBuilder(String.format("%sPGPSignatureList:\n", inIndent));
         res.append(String.format("%s\tNumber of signatures: %d\n", inIndent, o.size()));
@@ -185,7 +185,7 @@ public class Main {
         return res.toString();
     }
 
-    static private String dumpPGPPublicKey(PGPPublicKey o, String inIndent) {
+    static private String dumpPGPPublicKey(PGPPublicKey o, String inIndent) throws PGPException {
         // No stream
         StringBuilder res = new StringBuilder(String.format("%sPGPPublicKey:\n", inIndent));
         res.append(String.format("%s\tID: %X\n", inIndent, o.getKeyID()));
@@ -209,7 +209,7 @@ public class Main {
         return res.toString();
     }
 
-    static private String dumpPGPPublicKeyRing(PGPPublicKeyRing o, String inIndent) {
+    static private String dumpPGPPublicKeyRing(PGPPublicKeyRing o, String inIndent) throws PGPException {
         // No stream
         StringBuilder res = new StringBuilder(String.format("%sPGPPublicKeyRing:\n", inIndent));
         res.append(String.format("%s\tPublic keys:\n", inIndent));
