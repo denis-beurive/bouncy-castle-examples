@@ -95,6 +95,7 @@ public class Main {
     }
 
     static private String dumpSignatureSubPackets(SignatureSubpacket[] inSps, String inIndent) {
+        // No stream
         StringBuilder res = new StringBuilder();
         for (int i=0; i<inSps.length; i++) {
             res.append(String.format("%sSignatureSubpacket:\n", inIndent));
@@ -107,15 +108,17 @@ public class Main {
     }
 
     static private String dumpPGPSignature(PGPSignature o, String inIndent) {
+        // No stream
         StringBuilder res = new StringBuilder(String.format("%sPGPSignature:\n", inIndent));
         res.append(String.format("%s\tVersion: %d\n", inIndent, o.getVersion()));
+        res.append(String.format("%s\tType: %d (%X)\n", inIndent, o.getSignatureType(), o.getSignatureType()));
         res.append(String.format("%s\tCreation time: %s\n", inIndent, o.getCreationTime().toString()));
         res.append(String.format("%s\tHash Algorithm: %d\n", inIndent, o.getHashAlgorithm()));
         res.append(String.format("%s\tKey Algorithm: %d\n", inIndent, o.getKeyAlgorithm()));
         res.append(String.format("%s\tKey ID: %X\n", inIndent, o.getKeyID()));
-        res.append(String.format("%s\tType: %d\n", inIndent, o.getSignatureType()));
-        res.append(String.format("%s\tCertification ? %s\n", inIndent, o.isCertification() ? "yes" : "no"));
+        res.append(String.format("%s\tIs certification ? %s\n", inIndent, o.isCertification() ? "yes" : "no"));
         res.append(String.format("%s\tHas sub packets ? %s\n", inIndent, o.hasSubpackets() ? "yes" : "no"));
+        res.append(String.format("%s\tSignature: %H\n", inIndent, o.getSignature()));
 
         if (o.hasSubpackets()) {
             res.append(String.format("%s\tHas hashed sub-packet count: %d\n", inIndent, o.getHashedSubPackets().size()));
@@ -127,9 +130,11 @@ public class Main {
     }
 
     static private String dumpPGPSignatureList(PGPSignatureList o, String inIndent) {
+        // No stream
         StringBuilder res = new StringBuilder(String.format("%sPGPSignatureList:\n", inIndent));
         res.append(String.format("%s\tNumber of signatures: %d\n", inIndent, o.size()));
         res.append(String.format("%s\tSignatures:\n", inIndent));
+        res.append(String.format("%s\tIs empty: %s\n", inIndent, o.isEmpty() ? "yes" : "no"));
         for(PGPSignature s: o) {
             res.append(dumpPGPSignature(s, String.format("%s\t", inIndent)));
         }
@@ -137,6 +142,7 @@ public class Main {
     }
 
     static private String dumpImageAttribute(ImageAttribute o, String inIndent) {
+        // No stream
         StringBuilder res = new StringBuilder(String.format("%sImageAttribute:\n", inIndent));
         res.append(String.format("%s\tEncoding: %d\n", inIndent, o.getEncoding()));
         res.append(String.format("%s\tImage data length: %d\n", inIndent, o.getImageData().length));
@@ -144,6 +150,7 @@ public class Main {
     }
 
     static private String dumpPGPSecretKey(PGPSecretKey o, String inIndent) {
+        // No stream
         StringBuilder res = new StringBuilder(String.format("%sPGPSecretKey:\n", inIndent));
         res.append(String.format("%s\tID: %X\n", inIndent, o.getKeyID()));
         res.append(String.format("%s\tIs master ley ? %s\n", inIndent, o.isMasterKey() ? "yes" : "no"));
@@ -169,6 +176,7 @@ public class Main {
     }
 
     static private String dumpPGPSecretKeyRing(PGPSecretKeyRing o, String inIndent) {
+        // No stream
         StringBuilder res = new StringBuilder(String.format("%sPGPSecretKeyRing:\n", inIndent));
         res.append(String.format("%s", res.toString()));
         for(PGPSecretKey s: o) {
@@ -178,6 +186,7 @@ public class Main {
     }
 
     static private String dumpPGPPublicKey(PGPPublicKey o, String inIndent) {
+        // No stream
         StringBuilder res = new StringBuilder(String.format("%sPGPPublicKey:\n", inIndent));
         res.append(String.format("%s\tID: %X\n", inIndent, o.getKeyID()));
         res.append(String.format("%s\tVersion: %d\n", inIndent, o.getVersion()));
@@ -201,6 +210,7 @@ public class Main {
     }
 
     static private String dumpPGPPublicKeyRing(PGPPublicKeyRing o, String inIndent) {
+        // No stream
         StringBuilder res = new StringBuilder(String.format("%sPGPPublicKeyRing:\n", inIndent));
         res.append(String.format("%s\tPublic keys:\n", inIndent));
         res.append(String.format("%s", res.toString()));
@@ -211,7 +221,12 @@ public class Main {
         return res.toString();
     }
 
-    static private String dumpPGPCompressedData(PGPCompressedData o, String inIndent) throws PGPException, IOException {
+    static private String dumpPGPCompressedData(PGPCompressedData o, String inIndent) {
+        // Warning: do not consume the input streams returned by one of the following method here:
+        //          - o.getDataStream()
+        //          - o.getInputStream()
+        //          If you do, then the rest of the document will not be parsed.
+
         StringBuilder res = new StringBuilder(String.format("%sPGPCompressedData:\n", inIndent));
         res.append(String.format("%s\tAlgorithm: %d\n", inIndent, o.getAlgorithm()));
         return res.toString();
@@ -219,7 +234,7 @@ public class Main {
 
     static private String dumpPGPLiteralData(PGPLiteralData o, String inIndent) throws IOException {
         StringBuilder res = new StringBuilder(String.format("%sPGPLiteralData:\n", inIndent));
-        res.append(String.format("%s\tFormat: %d\n", inIndent, o.getFormat()));
+        res.append(String.format("%s\tFormat: %d (0x%X)\n", inIndent, o.getFormat(), o.getFormat()));
         res.append(String.format("%s\tFile name: %s\n", inIndent, o.getFileName()));
         res.append(String.format("%s\tModification time: %s\n", inIndent, o.getModificationTime().toString()));
         res.append(String.format("%s\tData length: %d\n", inIndent, o.getInputStream().readAllBytes().length));
@@ -245,8 +260,9 @@ public class Main {
     }
 
     static private String dumpPGPOnePassSignature(PGPOnePassSignature o, String inIndent) throws IOException {
+        // No stream
         StringBuilder res = new StringBuilder(String.format("%sPGPOnePassSignature:\n", inIndent));
-        res.append(String.format("%s\tID: %X:\n", inIndent, o.getKeyID()));
+        res.append(String.format("%s\tKey ID: %X\n", inIndent, o.getKeyID()));
         res.append(String.format("%s\tType: %d:\n", inIndent, o.getSignatureType()));
         res.append(String.format("%s\tHash algorithm: %d:\n", inIndent, o.getHashAlgorithm()));
         res.append(String.format("%s\tKey algorithm: %d:\n", inIndent, o.getKeyAlgorithm()));
@@ -255,6 +271,7 @@ public class Main {
     }
 
     static private String dumpPGPOnePassSignatureList(PGPOnePassSignatureList o, String inIndent) throws IOException {
+        // No stream
         StringBuilder res = new StringBuilder(String.format("%sPGPOnePassSignatureList:\n", inIndent));
         res.append(String.format("%s\tIs empty: %s\n", inIndent, o.isEmpty() ? "yes" : "no"));
         res.append(String.format("%s\tSize: %d\n", inIndent, o.size()));
@@ -275,6 +292,7 @@ public class Main {
     }
 
     static private String dumpPGPMarker(PGPMarker o, String inIndent) {
+        // No stream
         return String.format("%sPGPMarker: %s\n", inIndent, o.getClass().getName());
     }
 
