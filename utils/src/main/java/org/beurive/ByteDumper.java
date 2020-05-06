@@ -1,5 +1,8 @@
 package org.beurive;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Arrays;
 
 enum Format {
@@ -41,6 +44,13 @@ public class ByteDumper {
             }
         }
         return result.toString();
+    }
+
+    public String dump(String inPath) throws FileNotFoundException, IOException {
+        FileInputStream input = new FileInputStream(inPath);
+        byte[] data = input.readAllBytes();
+        input.close();
+        return this.dump(data);
     }
 
     public String dump(byte[] data) {
