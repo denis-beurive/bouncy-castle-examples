@@ -83,7 +83,8 @@ Please note the terms "key" and "subkey" may be confusing.
 
 On this repository:
 
-* [Anatomy of a secret key keyring](doc/pgp-packets-secret-keyring.md)
+* [Anatomy of a secret key keyring (HEX dump)](doc/pgp-packets-secret-keyring-hex.md)
+* [Anatomy of a secret key keyring (GPG dump)](doc/pgp-packets-secret-keyring-gpg.md)
 * [Anatomy of a signature](doc/pgp-packets-signature.md)
 * [Cross-certification](doc/cross-certify.md)
 * [GPG commands](doc/gpg.md)
