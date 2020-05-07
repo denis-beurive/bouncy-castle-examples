@@ -426,7 +426,7 @@ MPI (1024 bits / 128 bytes):
 `0x9D`: `0x10011101`
 
 * [format](https://tools.ietf.org/html/rfc4880#section-4.2.1): old
-* [tag](https://tools.ietf.org/html/rfc4880#section-4.3): `0b0111` = `4` => Secret-Subkey Packet 
+* [tag](https://tools.ietf.org/html/rfc4880#section-4.3): `0b0111` = `7` => Secret-Subkey Packet 
 * [type](https://tools.ietf.org/html/rfc4880#section-4.2.1): `0b01` = `1` => The packet has a two-octet length.
   The header is 3 octets long.
 * length = `0x0204` = 516 bytes
