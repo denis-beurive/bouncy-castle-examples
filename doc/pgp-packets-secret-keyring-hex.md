@@ -395,7 +395,31 @@ Next comes the signature (see [Version 4 Signature Packet Format](https://tools.
 
 Next: One or more multiprecision integers comprising the signature. This portion is algorithm specific.
 
+See [Version 3 Signature Packet Format](https://tools.ietf.org/html/rfc4880#section-5.2.2):
 
+The signature algorithm is RSA.
+
+> Algorithm-Specific Fields for RSA signatures:
+> * multiprecision integer (MPI) of RSA signature value m**d mod n.
+
+[multiprecision integer (MPI)](https://tools.ietf.org/html/rfc4880#section-3.2):
+
+> An MPI consists of two pieces: a two-octet scalar that is the length
+> of the MPI in bits followed by a string of octets that contain the
+> actual integer.
+
+* two-octet scalar that is the length of the MPI in bits: `0x0400` = `1024` bits = `128`bytes.
+
+MPI (1024 bits / 128 bytes):
+
+    AF 1B AF 3C 56 9C DA 34 AC D0 7D D0 7E 28 50 DF
+    C4 9B 89 A6 C1 40 2D AA 5D 99 79 56 B2 01 14 2B
+    1D DF 5C A9 C4 B1 05 A6 3F 09 9E 64 71 B9 71 20
+    D7 10 D3 51 9B 95 41 C7 C0 E0 F6 5B 62 07 34 87
+    89 82 9D 98 7C D8 9A 25 3F 34 29 44 20 07 47 71
+    95 05 5E 5C C1 10 39 78 05 A5 D6 20 17 66 5D 88
+    84 66 38 69 44 E5 2E BB 1A 8F C5 CA DE C5 08 69
+    84 BB 23 AC 51 16 F4 1A D8 56 C3 CA 5F 17 78 C7
 
 # Fourth packet
 
