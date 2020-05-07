@@ -283,6 +283,10 @@ SHA-1 hash of the plaintext of the algorithm-specific portion):
     8D 31 4C 46 5F 31 29 E7 38 61 0A 48 D7 F1 12 30
     62 68 01 77 0C 08 A3 F5 AB D5 B9 11
 
+The above block of bytes is encrypted. To get it, we selected the bytes knowing that:
+* the total length of the packet is 516 bytes.
+* the position of the last byte of the Initial Vector.
+
 > **Please note**: If the string-to-key usage octet was
 > 254, then a 20-octet SHA-1 hash of the plaintext of the
 > algorithm-specific portion. **This checksum or hash is encrypted
@@ -583,9 +587,15 @@ The encrypted private key MPIs (encrypted with the 20-octet SHA-1 hash of the pl
     5E EE 42 43 8E 4C 6A 12 6B 07 DD E5 91 F3 C0 A0
     35 67 59 08 31 A7 69 C7 6D A2 7B 22
 
-Please note: If the string-to-key usage octet was 254, then a 20-octet SHA-1
-hash of the plaintext of the algorithm-specific portion. This checksum or hash is encrypted
-together with the algorithm-specific fields. (see [Secret-Key Packet Formats](https://tools.ietf.org/html/rfc4880#section-5.5.3))
+The above block of bytes is encrypted. To get it, we selected the bytes knowing that:
+* the total length of the packet is 516 bytes.
+* the position of the last byte of the Initial Vector.
+
+> **Please note**: If the string-to-key usage octet was
+> 254, then a 20-octet SHA-1 hash of the plaintext of the
+> algorithm-specific portion. **This checksum or hash is encrypted
+> together with the algorithm-specific fields.**
+> (see [Secret-Key Packet Formats](https://tools.ietf.org/html/rfc4880#section-5.5.3)) 
 
 ## Fifth packet
 
