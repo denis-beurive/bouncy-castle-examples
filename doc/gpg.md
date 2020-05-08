@@ -76,3 +76,14 @@ With (see [this link](https://unix.stackexchange.com/questions/31996/how-are-the
     gpg --list-secret-keys --keyid-format LONG
     
     gpg --delete-secret-key "User Name"
+
+## Dumping a PGP document
+
+    gpg --list-packets --verbose document.pgp
+    
+Output example:
+
+    # off=519 ctb=b4 tag=13 hlen=2 plen=15
+    :user ID packet: "owner@email.com"
+
+![](images/pgp-packet-gpg-dump.svg)

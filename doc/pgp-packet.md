@@ -5,6 +5,8 @@ A packet is made of:
 * a header
 * a payload
 
+![](images/pgp-packet-general.svg)
+
 See [FRC 4880 - 4.2. Packet Headers](https://tools.ietf.org/html/rfc4880#section-4.2)
 
               +---------------+
@@ -21,6 +23,8 @@ Old format packets contain:
 New format packets contain:
 
          Bits 5-0 -- packet tag
+
+![](images/pgp-packet-header.svg)
 
 Example of packet (this is a signature):
 
