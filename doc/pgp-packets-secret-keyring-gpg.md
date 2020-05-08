@@ -26,7 +26,7 @@ Data:
   * `tag=5`: [Secret-Key Packet](https://tools.ietf.org/html/rfc4880#section-5.5.1.3)
   * `hlen=3`: this is the length of the header.
   * `plen=516`: this is the length of the payload.
-* **secret ket packet**:
+* **secret key packet**:
   * `version 4`: [Public-Key Packet Formats - version 4](https://tools.ietf.org/html/rfc4880#section-5.5.2)
   * `algo=1`: [RSA (Encrypt or Sign)](https://tools.ietf.org/html/rfc4880#section-9.1)
   * `created 1588776506`: mercredi 6 mai 2020 16:48:26 GMT+02:00 [DST]
@@ -46,114 +46,123 @@ Data:
       
 ## Second packet
               
-The second packet represents a user ID packet ([tag=13](https://tools.ietf.org/html/rfc4880#section-5.11))
-
 Data:
         
     # off=295 ctb=b4 tag=13 hlen=2 plen=15
     :user ID packet: "denis@email.com"
     
+* **packet attributes**:
+  * `off=519`: the packet data starts 519 bytes after the beginning of the document.
+  * `ctb=b4`: this is the first byte of the packet (`0xB4`).
+  * `tag=13`: [User ID Packet](https://tools.ietf.org/html/rfc4880#section-4.3)
+  * `hlen=2`: this is the length of the header.
+  * `plen=15`: this is the length of the payload.
+
 ## Third packet
-    
-The third packet represents a signature packet ([tag=2](https://tools.ietf.org/html/rfc4880#section-5.2))
-* `version 4`: [Version 4 Signature Packet Format](https://tools.ietf.org/html/rfc4880#section-5.2.3)    
-* `algo=1`: [RSA (Encrypt or Sign)](https://tools.ietf.org/html/rfc4880#section-9.1)
-* `sigclass 0x13`: [Positive certification of a User ID and Public-Key packet](https://tools.ietf.org/html/rfc4880#section-5.2.1)
-* `digest algo=2`: [SHA1](https://tools.ietf.org/html/rfc4880#section-9.4) 
-* `subpkt 2`: [Signature Creation Time](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
-* `subpkt 16`: [Issuer](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
 
 Data:
 
-    # off=312 ctb=88 tag=2 hlen=2 plen=92
-    :signature packet: algo 1, keyid A37C313E3FA6FADC
-        version 4, created 1586792857, md5len 0, sigclass 0x13
-        digest algo 2, begin of digest a3 f1
-        hashed subpkt 2 len 4 (sig created 2020-04-13)
-        subpkt 16 len 8 (issuer key ID A37C313E3FA6FADC)
-        data: 829E9C51496169FACDC3059FE8F1F766D046FA6D0B2095BB7C983B29C9DF05261BDBEB4BD7995B1A06E524525638868ADC17CE49D6BC0990FD046E9EAA2C09D7
+    # off=536 ctb=88 tag=2 hlen=2 plen=156
+    :signature packet: algo 1, keyid EFC852091E95E75C
+            version 4, created 1588776507, md5len 0, sigclass 0x10
+            digest algo 8, begin of digest 68 b3
+            hashed subpkt 2 len 4 (sig created 2020-05-06)
+            subpkt 16 len 8 (issuer key ID EFC852091E95E75C)
+            data: AF1BAF3C569CDA34ACD07DD07E2850DFC49B89A6C1402DAA5D997956B201142B1DDF5CA9C4B105A63F099E6471B97120D710D3519B9541C7C0E0F65B6207348789829D987CD89A253F3429442007477195055E5CC110397805A5D62017665D888466386944E52EBB1A8FC5CADEC5086984BB23AC5116F41AD856C3CA5F1778C7
+        
+* **packet attributes**:
+  * `off=536`: the packet data starts 536 bytes after the beginning of the document.
+  * `ctb=88`: this is the first byte of the packet (`0x88`).
+  * `tag=2`: [Signature Packet](https://tools.ietf.org/html/rfc4880#section-4.3)
+  * `hlen=2`: this is the length of the header.
+  * `plen=156`: this is the length of the payload.
+* **signature packet**:
+  * `version 4`: [Version 4 Signature Packet Format](https://tools.ietf.org/html/rfc4880#section-5.2.3)
+  * `created 1588776507`: mercredi 6 mai 2020 16:48:27 GMT+02:00 DST
+  * `md5len 0`:
+  * `sigclass 0x10`: [Generic certification of a User ID and Public-Key packet.](https://tools.ietf.org/html/rfc4880#section-5.2.1)
+  * `digest algo 8`: [SHA256](https://tools.ietf.org/html/rfc4880#section-9.4)
+  * `hashed subpkt 2 len 4`:
+    * `2` represents the type of the subpacket ([Signature Creation Time](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)).
+    * `4` represents the length of the subpacket body (4 bytes).
+  * `subpkt 16 len 8`:
+    * `16` represents the type of the subpacket ([Issuer](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)).
+    * `8` represents the length of the subpacket.
+  * `data: AF1BAF3C569C...`: this represents the multiprecision integer (MPI) of RSA signature value m**d mod n
+    (see [Version 3 Signature Packet](https://tools.ietf.org/html/rfc4880#section-5.2.2)).
         
 ## Fourth packet
         
-The fourth packet represents a secret sub key ([tag=7](https://tools.ietf.org/html/rfc4880#section-5.5.1.4))
-* `algo=17`: [DSA (Digital Signature Algorithm)](https://tools.ietf.org/html/rfc4880#section-9.1)
-
 Data:
-        
-    # off=406 ctb=9d tag=7 hlen=3 plen=297
+
+    # off=694 ctb=9d tag=7 hlen=3 plen=516
     :secret sub key packet:
-        version 4, algo 17, created 1586792857, expires 0
-        pkey[0]: 87307A03FD4EE055A51D5EFDE3D5E518A48D920E4CA2B9DB9ECDFEEE4CBE5D13882F4DD74F5DDA19FA01FE35F2A60A1ADFA7B60B085AB193C675F9655FCC32DD
-        pkey[1]: F3AC18CFEFA9E7626F129294C8CE48099FEC9B0B
-        pkey[2]: 043E892E0454B91013EE1317E7311A73575582F5AFE81A4204AB3D2B58A6BBB777AB0B683BCE7F723B093F88EC39E0BA1062B4EBDB31C1CA531B14CB5C4E8E5A
-        pkey[3]: 7BE703DEB57CA64E53E4D630B8CEE60C0C22DF170C068EA0BF913A2A2F7584FC96FE41725FCF7D796A140FE055888148FE948F7216CECEB3EB33D6486A39ADFD
-        iter+salt S2K, algo: 9, SHA1 protection, hash: 2, salt: 7A5C134348C03B63
-        protect count: 65536 (96)
-        protect IV:  69 82 7d ba 31 cd 0d 51 12 a3 1e 84 60 5b 57 b7
-        skey[4]: [v4 protected]
-        keyid: F02A1F4E95231A89
+            version 4, algo 1, created 1588776507, expires 0
+            pkey[0]: D7438BD357572AD0197BE494621E35FC713EDF80204273E223F05212C35F7CC07E232BB8F8C61D78EF6C79234A369914638357B27242C28F628615B419D508817E0BE202DBDE06D8E319ABB854CC0A744055E35C594D0F519136633A6F1CF5EF9D864F0A7DA539FD1B743A
+    0529FC2B9CEF4539232837B34BA40254BF27D7EC13
+            pkey[1]: 11
+            iter+salt S2K, algo: 9, SHA1 protection, hash: 8, salt: 9F19C866F9DF00F4
+            protect count: 65536 (96)
+            protect IV:  c5 92 fb ad 4e 62 40 06 f2 22 66 77 1d 17 ea 6f
+            skey[2]: [v4 protected]
+            keyid: E14F4509FB6F57AF
+
+* **packet attributes**:
+  * `off=694`: the packet data starts 694 bytes after the beginning of the document.
+  * `ctb=9d`: this is the first byte of the packet (`0x9C`).
+  * `tag=7`: [Secret-Subkey Packet](https://tools.ietf.org/html/rfc4880#section-4.3)
+  * `hlen=3`: this is the length of the header.
+  * `plen=516`: this is the length of the payload.
+* **secret subkey**:
+  * `version 4`: [version 4 Public-Key Packet](https://tools.ietf.org/html/rfc4880#section-5.5.2)
+  * `algo 1`: [RSA](https://tools.ietf.org/html/rfc4880#section-9.1)
+  * `created 1588776507`: Wednesday 6 May 2020 14:48:27 [GMT]
+  * `expires 0`: the key does not expire.
+* **public subkey**:
+  * `pkey[0]`: `D7438BD35757...` this is the first [Multiprecision Integers](https://tools.ietf.org/html/rfc4880#section-3.2) that makes the public key.
+  * `pkey[1]`: `11` the is the second [Multiprecision Integers](https://tools.ietf.org/html/rfc4880#section-3.2) that makes the public key.
+  * `iter+salt S2K`: [Iterated and Salted S2K](https://tools.ietf.org/html/rfc4880#section-3.7.1.3)
+  * `algo: 9`: [AES with 256-bit key](https://tools.ietf.org/html/rfc4880#section-9.4)
+  * `SHA1 protection`: 
+  * `hash: 8`: [SHA256](https://tools.ietf.org/html/rfc4880#section-9.4)
+  * `salt: 9F19C866F9DF00F4`: the [salt](https://en.wikipedia.org/wiki/Salt_(cryptography)).
+  * `protect count: 65536 (96)`: 
+  * `rotect IV: c5 92...`: the block size for "AES with 256-bit key" (algo=9) is: 128 bits / 16 bytes.
+    The Initial Vector is 16 bytes long. 
+  * `skey[2]: [v4 protected]`: The encrypted private key MPIs (encrypted with the 20-octet SHA-1 hash of the plaintext of the algorithm-specific portion).
         
 ## Fifth packet
-        
-The fifth packet represents a signature packet ([tag=2](https://tools.ietf.org/html/rfc4880#section-5.2))
-* `version 4`: [Version 4 Signature Packet Format](https://tools.ietf.org/html/rfc4880#section-5.2.3)    
-* `algo=1`: [RSA (Encrypt or Sign)](https://tools.ietf.org/html/rfc4880#section-9.1)
-* `sigclass 0x18`: [Subkey Binding Signature](https://tools.ietf.org/html/rfc4880#section-5.2.1)
-* `digest algo=2`: [SHA1](https://tools.ietf.org/html/rfc4880#section-9.4) 
-* `subpkt 2`: [Signature Creation Time](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
-* `subpkt 16`: [Issuer](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
 
 Data:
         
-    # off=706 ctb=88 tag=2 hlen=2 plen=92
-    :signature packet: algo 1, keyid A37C313E3FA6FADC
-        version 4, created 1586792857, md5len 0, sigclass 0x18
-        digest algo 2, begin of digest 1b 4f
-        hashed subpkt 2 len 4 (sig created 2020-04-13)
-        subpkt 16 len 8 (issuer key ID A37C313E3FA6FADC)
-        data: AD4867C165A16A5AF5802E6203A03C2BF4E7C278BB64600766E878A2FA25BC7D85AB5E5CBF34804CDE16BCF0BA5D3517293ABC13FD4DAEE65B8F7F2B2930FC90
-        
-## Sixth packet
+    # off=1213 ctb=88 tag=2 hlen=2 plen=156
+    :signature packet: algo 1, keyid EFC852091E95E75C
+            version 4, created 1588776507, md5len 0, sigclass 0x18
+            digest algo 8, begin of digest 79 42
+            hashed subpkt 2 len 4 (sig created 2020-05-06)
+            subpkt 16 len 8 (issuer key ID EFC852091E95E75C)
+            data: 1DA723C84429B3349778A1F3CD14FB968C65B00C2C66968F9C83F947FBE09DEE36ADF82BE5E47753BBFAC066EB80409EF83611E3AF6FAFC988A54C29ADC7860F242211E1C7EDA61C98C243189FA494D3E07DBDC989B1E872442F9F232ABD81E813535F47E6C79E316D995B5FF
+    FD1F5E9C24428F8E4FC2B28EA8532A04227D618
 
-The sixth represents a secret sub key ([tag=7](https://tools.ietf.org/html/rfc4880#section-5.5.1.4))
-* `algo=16`: [Elgamal (Encrypt-Only)](https://tools.ietf.org/html/rfc4880#section-9.1)
-     
-Data:   
-        
-    # off=800 ctb=9d tag=7 hlen=3 plen=319
-    :secret sub key packet:
-        version 4, algo 16, created 1586792857, expires 0
-        pkey[0]: 9494FEC095F3B85EE286542B3836FC81A5DD0A0349B4C239DD38744D488CF8E31DB8BCB7D33B41ABB9E5A33CCA9144B1CEF332C94BF0573BF047A3ACA98CDF3B
-        pkey[1]: 153D5D6172ADB43045B68AE8E1DE1070B6137005686D29D3D73A7749199681EE5B212C9B96BFDCFA5B20CD5E3FD2044895D609CF9B410B7A0F12CA1CB9A428CC
-        pkey[2]: 7234963360D1C4CFE23E8620EB60F6ACC3C833E101D9D8CE9036F441D6BC0D53BBCC5226D5047DC9129A7539BA78FF0950BC3AF91B00214BAE8243F9452149C5
-        iter+salt S2K, algo: 9, SHA1 protection, hash: 2, salt: 7A5C134348C03B63
-        protect count: 65536 (96)
-        protect IV:  56 36 c6 f7 80 d0 47 af 86 fd ca 35 c6 88 28 8e
-        skey[3]: [v4 protected]
-        keyid: B4CBC3A76A364F91
-        
-
-the seventh represents a signature packet ([tag=2](https://tools.ietf.org/html/rfc4880#section-5.2))
-* `version 4`: [Version 4 Signature Packet Format](https://tools.ietf.org/html/rfc4880#section-5.2.3)
-* `algo=1`: [RSA (Encrypt or Sign)](https://tools.ietf.org/html/rfc4880#section-9.1)
-* `sigclass 0x18`: [Subkey Binding Signature](https://tools.ietf.org/html/rfc4880#section-5.2.1)
-* `digest algo=2`: [SHA1](https://tools.ietf.org/html/rfc4880#section-9.4) 
-* `subpkt 2`: [Signature Creation Time](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
-* `subpkt 16`: [Issuer](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)
-
-Data:
-        
-    # off=1122 ctb=88 tag=2 hlen=2 plen=92
-    :signature packet: algo 1, keyid A37C313E3FA6FADC
-        version 4, created 1586792857, md5len 0, sigclass 0x18
-        digest algo 2, begin of digest 55 6e
-        hashed subpkt 2 len 4 (sig created 2020-04-13)
-        subpkt 16 len 8 (issuer key ID A37C313E3FA6FADC)
-        data: A33998CEF4B7E587B1A7FD724F32ACE002C9B54E5983FD133BCDAC15B8E50E97436614ADF772B821A552DCB8317718BA58BD4EB991834905AD54173B07044029
-
-
-
-Another useful command to print information from the packet:
-
-    $ pgpdump -lmi secret-keyring.pgp
-    
+* **packet attributes**:
+  * `off=1213`: the packet data starts 1213 bytes after the beginning of the document.
+  * `ctb=88`: this is the first byte of the packet (`0x88`).
+  * `tag=2`: [Signature Packet](https://tools.ietf.org/html/rfc4880#section-4.3)
+  * `hlen=2`: this is the length of the header.
+  * `plen=156`: this is the length of the payload.
+* **signature**:
+  * `version 4`: [Version 4 Signature Packet Format](https://tools.ietf.org/html/rfc4880#section-5.2.3)
+  * `created 1588776507`: mercredi 6 mai 2020 16:48:27 GMT+02:00 DST
+  * `md5len 0`
+  * `sigclass 0x18`: [Subkey Binding Signature](https://tools.ietf.org/html/rfc4880#section-5.2.1)
+  * `digest algo 8`: [SHA256](https://tools.ietf.org/html/rfc4880#section-9.4)
+  * `begin of digest 79 42`:
+  * `hashed subpkt 2 len 4`:
+    * `2` represents the type of the subpacket ([Signature Creation Time](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)).
+    * `4` represents the length of the subpacket body (4 bytes).
+  * `subpkt 16 len 8`:
+    * `16` represents the type of the subpacket ([Issuer](https://tools.ietf.org/html/rfc4880#section-5.2.3.1)).
+    * `8` represents the length of the subpacket.
+  * `data: 1DA723C84429B3349778...`: this is the [MPI](https://tools.ietf.org/html/rfc4880#section-3.2) that represents the signature.
+  
+...
