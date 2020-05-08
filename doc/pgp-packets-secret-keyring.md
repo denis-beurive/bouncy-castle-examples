@@ -5,4 +5,5 @@ The document used to write this analysis is: [secret-keyring-bin.pgp](pgp-packet
 * using an HEX editor: [click here](pgp-packets-secret-keyring-hex.md)
 * using GPG: [click here](pgp-packets-secret-keyring-gpg.md)
 
+![](images/pgp-packets-secret-keyring-full.svg)
 
