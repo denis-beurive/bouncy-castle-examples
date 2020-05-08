@@ -80,8 +80,7 @@ On this repository:
 On the WEB
 
 * [What exactly is a subkey?](https://security.stackexchange.com/questions/76940/what-exactly-is-a-subkey)
-* [OpenPGP Under The Hood](https://under-the-hood.sequoia-pgp.org/literal-data/)
-* [Key structure](https://gnupg.org/faq/subkey-cross-certify.html)
+* [OpenPGP Under The Hood: literal data](https://under-the-hood.sequoia-pgp.org/literal-data/)
 * [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html)
 * [Detached signature](https://subversivebytes.wordpress.com/2013/12/10/pgp-cryptography-with-the-legion-of-the-bouncy-castle-part-5/)
 * [Why does a secret key have a <ultimate> uid ?](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto)
