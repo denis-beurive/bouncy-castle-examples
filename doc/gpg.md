@@ -43,6 +43,21 @@ With (see [this link](https://unix.stackexchange.com/questions/31996/how-are-the
 | `PUBKEY_USAGE_ENC`  | E    |
 | `PUBKEY_USAGE_AUTH` | A    |
 
+## Add a key into the GPG key rings
+
+    $ gpg --edit-key ${KEYID}
+    -> "trust" [ENTER]
+    -> "5" [ENTER]
+    -> "o" [ENTER]
+    -> "quit" [ENTER]
+
+## Cross certify a key
+
+    $ gpg --edit-key ${KEYID}
+    -> "cross-certify" [ENTER]
+    -> "quit"
+    -> "y" [ENTER]
+
 ## Export a key
 
 ### Public key

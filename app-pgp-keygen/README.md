@@ -36,61 +36,23 @@ lower 32 or 64 bits respectively of a key fingerprint. PGP uses key IDs to refer
 
 # Testing the program
 
-**WARNING** To follow the procedure described below, you must not create a DSA sub-key.
+**WARNING**: sub-keys of type DSA cannot be "[cross-certified](../doc/cross-certify.md)" using GPG 2.2.19.
 
-    352   PGPKeyPair masterRsaKeyPair = createRsaKeyPair();
-    353   // **WARNING**: sub-keys of type DSA cannot be "cross-certified" using GPG 2.2.19.
-    354   // If you don't use PGP, then you can create a DSA sub-key:
-    355   // PGPKeyPair subKeyPair1 = createDsaKeyPair();
-    356   PGPKeyPair subKeyPair1 = createRsaKeyPair();
-    357   PGPKeyPair subKeyPair2 = createElGamalKeyPair();
+# Description
 
-The program produces 3 keys:
-
-    Keys:
-                    [FCEC4204265FFBA9] algo=9 (is master ? yes, is signing ? yes)
-                    [F71DBD3EF5AC9D45] algo=9 (is master ? no, is signing ? yes)
-                    [68DC6B34FEC4F97A] algo=9 (is master ? no, is signing ? no)
-
-# Use the keys
-
-MSDOS:
-
-    SET KEY="FCEC4204265FFBA9"
-    
-BASH:
-
-    export KEY="FCEC4204265FFBA9"
-
-## Load the keys into the GPG key rings
-
-    $ gpg --import data/secret-keyring.pgp # pass phrase is "password"
-    $ gpg --import data/public-keyring.pgp
-
-## Declare the keys into the GPG trust database
-
-    $ gpg --edit-key %KEY%
-    -> "trust" [ENTER]
-    -> "5" [ENTER]
-    -> "o" [ENTER]
-    -> "quit" [ENTER]
-
-## Cross certify the keys
-
-    $ gpg --edit-key %KEY%
-    -> "cross-certify" [ENTER]
-    -> "quit"
-    -> "y" [ENTER]
-
-## Sign a document
-
-    $ gpg --default-key %KEY%  --output data/signature.sig --sign data/document-to-sign.txt
-    $ gpg --default-key %KEY%  --output data/detached-signature.sig --detach-sig data/document-to-sign.txt
-
-## Verify the signatures
-
-    $ gpg --verify data/signature.sig
-    $ gpg --verify data/detached-signature.sig data/document-to-sign.txt
+* `dumpKeyRing`: dump a keyring into a file.
+* `extractPrivateKey`: extract the private key from a secret key.
+* `dumpPublicKey`: dump a public key into a file.
+* `dumpSecretKey`: dump a secret key into a file.
+* `dumpAllPublicKeys`: dump all (public) keys from a public keyring.
+* `dumpAllSecretKeys`: dump all (secret) keys from a secret keyring.
+* `createRsaKeyPair`: create an RSA key pair.
+* `createDsaKeyPair`: create a DSA key pair.
+* `createElGamalKeyPair`: create an El Gamal key pair.
+* `getKeyRingGenerator`: create a key generator.
+* `getSecretKeyIds`: returns all the key IDs from a secret keyring.
+* `signKey`: sign a secret key (inludes subpackets).
+* `addSubKey`: add a subkey to a keyring.
 
 # Documents
 
@@ -98,10 +60,8 @@ BASH:
 * [Why does a secret key have a <ultimate> uid ?](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto)
 * [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html)
 * [java sign public pgp key with bouncycastle](https://stackoverflow.com/questions/28591684/java-sign-public-pgp-key-with-bouncycastle)
-* [Cross-certification](doc/cross-certify.md)
+* [Cross-certification](../doc/cross-certify.md)
 * [PGP keys, software security, and much more threatened by new SHA1 exploit](https://arstechnica.com/information-technology/2020/01/pgp-keys-software-security-and-much-more-threatened-by-new-sha1-exploit/)
 * [SHA256 RSAkeyPairGenerator #200](https://github.com/bcgit/bc-java/issues/200)
 * [GnuPG 2.2.18 released](https://lists.gnupg.org/pipermail/gnupg-devel/2019-November/034487.html)
-* [How do you create OpenPGP subkeys with Bouncy Castle API?](http://quabr.com/34694785/how-do-you-create-openpgp-subkeys-with-bouncy-castle-api)
-* [Spongycastle](https://github.com/farewell4574/farewell/blob/master/open-keychain-development/extern/spongycastle/pg/src/main/java/org/spongycastle/openpgp/PGPPublicKey.java)
 * [Is there a size restriction on signatures in Java (java.security)?](https://stackoverflow.com/questions/2678138/is-there-a-size-restriction-on-signatures-in-java-java-security)
