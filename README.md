@@ -71,6 +71,7 @@ Then, build all the example applications:
 
 On this repository:
 
+* [Notes on Bouncy Castle](doc/bouncy-castle-notes.md)
 * [PGP packet general anatomy](doc/pgp-packet.md)
 * [Anatomy of a secret key keyring](doc/pgp-packets-secret-keyring.md)
 * [Anatomy of a signature](doc/pgp-packets-signature.md)
