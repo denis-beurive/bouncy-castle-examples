@@ -1,20 +1,114 @@
 package com.beurive;
 
 import java.io.*;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.security.Security;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.bcpg.ArmoredInputStream;
-import org.bouncycastle.bcpg.BCPGInputStream;
-import org.bouncycastle.bcpg.SignatureSubpacket;
+import org.bouncycastle.bcpg.*;
 import org.bouncycastle.bcpg.attr.ImageAttribute;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
+import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
 
 public class Main {
+
+    /**
+     * Create a FileOutputStream.
+     * @param inPath Path to the file.
+     * @return A new FileOutputStream.
+     * @throws FileNotFoundException
+     */
+
+    static private FileOutputStream getFileOutputStream(String inPath) throws FileNotFoundException {
+        return new FileOutputStream(new File(inPath));
+    }
+
+    /**
+     * Create an RSA key pair.
+     * @return An RSA key pair.
+     * @throws PGPException
+     * @note You should set the strength of the key to at least 1024.
+     * @see https://stackoverflow.com/questions/2678138/is-there-a-size-restriction-on-signatures-in-java-java-security
+     */
+
+    private static PGPKeyPair createRsaKeyPair() throws PGPException {
+        // Create a key pair generator for RSA.
+        RSAKeyPairGenerator rsaKpg = new RSAKeyPairGenerator();
+        BigInteger publicExponent = BigInteger.valueOf(0x11);
+        SecureRandom random = new SecureRandom();
+        // **WARNING**: You should set the strength of the key to at least 1024.
+        // see https://stackoverflow.com/questions/2678138/is-there-a-size-restriction-on-signatures-in-java-java-security
+        int strength = 1024;
+        int certainty = 25;
+        rsaKpg.init(new RSAKeyGenerationParameters(
+                publicExponent,
+                random,
+                strength,
+                certainty));
+
+        // Generate the RSA keys.
+        AsymmetricCipherKeyPair rsaKp = rsaKpg.generateKeyPair();
+        return new BcPGPKeyPair(PGPPublicKey.RSA_GENERAL, rsaKp, new Date());
+    }
+
+    /**
+     * Return a keyring generator.
+     * @param inPairs List of PGP key pairs.
+     * @param inIdentity Identity of the key owner.
+     * @param inPassPhrase Passphrase used to encrypt the secret keys.
+     * @return A new keyring generator.
+     * @throws IllegalArgumentException
+     * @throws PGPException
+     */
+
+    private static PGPKeyRingGenerator getKeyRingGenerator(PGPKeyPair[] inPairs,
+                                                           String inIdentity,
+                                                           String inPassPhrase) throws IllegalArgumentException, PGPException {
+        if (0 == inPairs.length) {
+            throw new IllegalArgumentException("No key given!");
+        }
+        char[] passPhrase = inPassPhrase.toCharArray();
+
+        // See RFC 4840: [9.4. Hash Algorithms]
+        // https://tools.ietf.org/html/rfc4880#section-9.4
+        // Note: only SHA1 supported for key checksum calculations
+        // org.bouncycastle.openpgp.PGPException: only SHA1 supported for key checksum calculations.
+        PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
+        PGPDigestCalculator sha256Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA256);
+        PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(
+                // See RFC 4880: [5.2.1. Signature Types]
+                // https://tools.ietf.org/html/rfc4880#section-5.2.1
+                // PGPSignature.POSITIVE_CERTIFICATION,
+                PGPSignature.DEFAULT_CERTIFICATION, // 0x10
+                inPairs[0],
+                inIdentity,
+                sha1Calc,
+                null,
+                null,
+                new JcaPGPContentSignerBuilder(inPairs[0].getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA256),
+                new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha256Calc).setProvider("BC").build(passPhrase)
+        );
+
+        for (int i=1; i<inPairs.length; i++) {
+            keyRingGen.addSubKey(inPairs[i]);
+        }
+        return keyRingGen;
+    }
+
 
     /**
      * Illustrates the use of ByteArrayInputStream / ByteArrayOutputStream.
@@ -369,7 +463,97 @@ public class Main {
         }
     }
 
+
+
+    static private void showBCPGOutputStream() throws IOException, PGPException {
+
+        String outputFile;
+        BCPGOutputStream basicOutputStream;
+        ArmoredOutputStream armoredOutputStream;
+        ByteArrayOutputStream buffer;
+
+
+        UserIDPacket userIDPacket = new UserIDPacket("user@email.org");
+        outputFile = "data/packet1.bgp";
+        basicOutputStream = new BCPGOutputStream(getFileOutputStream(outputFile));
+        userIDPacket.encode(basicOutputStream);
+        basicOutputStream.close();
+        System.out.printf("gpg --list-packet %s\n", outputFile);
+
+        outputFile = "data/packet1.agp";
+        buffer = new ByteArrayOutputStream();
+        basicOutputStream = new BCPGOutputStream(buffer);
+        userIDPacket.encode(basicOutputStream);
+        armoredOutputStream = new ArmoredOutputStream(new FileOutputStream(new File(outputFile)));
+        armoredOutputStream.write(buffer.toByteArray());
+        basicOutputStream.close();
+        armoredOutputStream.close();
+        System.out.printf("gpg --list-packet %s\n", outputFile);
+
+        outputFile = "data/packet2.bgp";
+        basicOutputStream = new BCPGOutputStream(getFileOutputStream(outputFile));
+        UserIDPacket userIDPacket1 = new UserIDPacket("user1@email.org");
+        UserIDPacket userIDPacket2 = new UserIDPacket("user2@email.org");
+        userIDPacket1.encode(basicOutputStream);
+        userIDPacket2.encode(basicOutputStream);
+        basicOutputStream.close();
+        System.out.printf("gpg --list-packet %s\n", outputFile);
+
+        outputFile = "data/packet1.agp";
+        buffer = new ByteArrayOutputStream();
+        basicOutputStream = new BCPGOutputStream(buffer);
+        userIDPacket1.encode(basicOutputStream);
+        userIDPacket2.encode(basicOutputStream);
+        armoredOutputStream = new ArmoredOutputStream(new FileOutputStream(new File(outputFile)));
+        armoredOutputStream.write(buffer.toByteArray());
+        basicOutputStream.close();
+        armoredOutputStream.close();
+        System.out.printf("gpg --list-packet %s\n", outputFile);
+
+
+
+
+
+
+
+        PGPKeyPair kp = createRsaKeyPair();
+        PGPKeyPair[] keyPairs1 = {kp};
+        PGPKeyRingGenerator keyRingGen = getKeyRingGenerator(keyPairs1,
+                "user@email.org",
+                "password");
+        PGPPublicKeyRing pubRing = keyRingGen.generatePublicKeyRing();
+        PGPSecretKeyRing secRing = keyRingGen.generateSecretKeyRing();
+
+
+
+//        outputFile = "data/packet3.bgp";
+//        System.out.printf("Create 1 Public Key Ring and write it to \"%s\"\n", outputFile);
+//        basicOutputStream = new BCPGOutputStream(getFileOutputStream(outputFile));
+//        pubRing.encode(basicOutputStream);
+//        basicOutputStream.close();
+//        System.out.printf("gpg --list-packet %s\n", outputFile);
+//
+//        outputFile = "data/packet4.agp";
+//        FileOutputStream fstream = getFileOutputStream(outputFile);
+//        pubRing.encode(fstream);
+//        basicOutputStream.close();
+//        System.out.printf("gpg --list-packet %s\n", outputFile);
+
+
+
+
+
+//        PublicKeyPacket publicKeyPacket = new PublicKeyPacket(pubKey.getAlgorithm(), pubKey.getCreationTime(), pubKey.);
+
+//        basicOutputStream.writePacket();
+//        basicOutputStream.writeObject();
+
+
+    }
+
     public static void main(String[] args) {
+        Security.addProvider(new BouncyCastleProvider());
+
         try {
             showByteArrayStreams();
             showCompression();
@@ -383,6 +567,9 @@ public class Main {
             System.out.println("====================================================");
             showBCPGInputStream("data/document.txt.bpg");
             System.out.println("====================================================");
+
+            showBCPGOutputStream();
+
         } catch (Exception e) {
             e.printStackTrace();
         }

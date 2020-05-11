@@ -166,7 +166,7 @@ public class Main {
      * ┌───────────────────────┐
      * │ Literal data packet   │
      * ├───────────────────────┤
-     * │ Signature scaffolding │
+     * │ Signature             │
      * └───────────────────────┘
      *
      * @param inDocumentToSign A string that represents the content of the document to sign.
@@ -209,7 +209,8 @@ public class Main {
         signerGenerator.init(PGPSignature.BINARY_DOCUMENT, privateKey);
 
         // Set the user IDs.
-        Iterator<String> it = secretKeyRing.getPublicKey().getUserIDs();
+        PGPPublicKey pgpPublicMasterKey = secretKeyRing.getPublicKey();
+        Iterator<String> it = pgpPublicMasterKey.getUserIDs();
         while (it.hasNext()) {
             String userId = it.next();
             PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
@@ -410,35 +411,81 @@ public class Main {
             throws Exception
     {
 
+        // The structure of the signature is:
+        //
+        // ┌───────────────────────────────────┐
+        // │ One Pass Signature Packet (tag=4) │
+        // └───────────────────────────────────┘
+        // ┌───────────────────────────────────┐
+        // │ Literal Data Packet (tag=11)      │
+        // └───────────────────────────────────┘
+        // ┌───────────────────────────────────┐
+        // │ Signature Packet (tag=2)          │
+        // └───────────────────────────────────┘
+        //
+        // See https://tools.ietf.org/html/rfc4880#section-5.4:
+        //
+        //     The One-Pass Signature packet precedes the signed data and contains
+        //     enough information to allow the receiver to begin calculating any
+        //     hashes needed to verify the signature. It allows the Signature
+        //     packet to be placed at the end of the message, so that the signer
+        //     can compute the entire signed message in one pass.
+        //
+        // The PGPOnePassSignature object contains the following data:
+        //    - the signature type.
+        //    - the hash algorithm used.
+        //    - the public-key algorithm used.
+        //    - the Key ID of the signing key.
+        //    - a flag showing whether the signature is nested.
+        //
+        // Pleas note that, at this point, the PGPOnePassSignature object does **NOT**
+        // contain the actual signature, nor the document that has been signed. These data
+        // are needed to verify the signature.
+
         // Create a stream reader for PGP objects
         ArmoredInputStream armoredinputStream = getArmoredInputStream(inSignatureFile);
         PGPCompressedData data = new PGPCompressedData(armoredinputStream);
         BCPGInputStream basicIn = new BCPGInputStream(data.getDataStream());
         JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(basicIn);
 
-        PGPOnePassSignatureList     p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
-        PGPOnePassSignature         ops = p1.get(0);
-        PGPLiteralData              p2 = (PGPLiteralData)pgpFact.nextObject();
-        InputStream                 dIn = p2.getInputStream();
-        int                         ch;
+        // Load the One Pass Signature Packet.
+        // Get an input stream on the document that was signed (encoded within the Literal Data Packet).
+        // Please keep in mind that the content of a Literal Data Packet is not encrypted.
+        PGPOnePassSignatureList sigList = (PGPOnePassSignatureList)pgpFact.nextObject();
+        PGPOnePassSignature onePassSignature = sigList.get(0);
+        PGPLiteralData literalData = (PGPLiteralData)pgpFact.nextObject();
+        InputStream literalDataStream = literalData.getInputStream();
 
-        PGPPublicKey key = pubKeyRing.getPublicKey(ops.getKeyID());
+        FileOutputStream out = new FileOutputStream(literalData.getFileName());
+        PGPPublicKey key = pubKeyRing.getPublicKey(onePassSignature.getKeyID());
+        onePassSignature.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), key);
 
-        FileOutputStream            out = new FileOutputStream(p2.getFileName());
-
-        ops.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), key);
-
-        while ((ch = dIn.read()) >= 0)
+        int ch;
+        while ((ch = literalDataStream.read()) >= 0)
         {
-            ops.update((byte)ch);
+            // Push the signed document into the PGPOnePassSignature object.
+            // This data is necessary in order to verify the signature.
+            onePassSignature.update((byte)ch);
+            // We create the file that was originally signed.
             out.write(ch);
         }
 
-        out.close();
+        out.close(); // Close the file that was originally signed.
 
-        PGPSignatureList            p3 = (PGPSignatureList)pgpFact.nextObject();
+        // [1] Load the signature.
+        // [2] Inject it into the PGPOnePassSignature object.
+        // ==> The PGPOnePassSignature object has everything it needs to verify the signature:
+        //     - the signature type.
+        //     - the hash algorithm used.
+        //     - the public-key algorithm used.
+        //     - the Key ID of the signing key.
+        //     - a flag showing whether the signature is nested.
+        //     - the document that has been signed.
+        //     - the signature.
+        // We can proceed to the verification.
+        PGPSignatureList p3 = (PGPSignatureList)pgpFact.nextObject();
 
-        return ops.verify(p3.get(0));
+        return onePassSignature.verify(p3.get(0));
     }
 
 
