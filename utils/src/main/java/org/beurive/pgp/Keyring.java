@@ -90,15 +90,13 @@ public class Keyring {
      * @param inKeyRing The secret keyring.
      * @param inId The ID of the key.
      * @param inPassPhrase The passphrase used to decrypt the private key.
-     * @return The method returns an instance of PGPPrivateKey.
+     * @return If the ID exists, then method returns an instance of PGPPrivateKey.
+     * Otherwise, the methof returns the value null.
      * @throws PGPException
      */
     static public PGPPrivateKey getPrivateKeyById(PGPSecretKeyRing inKeyRing, long inId, String inPassPhrase) throws PGPException {
         PGPSecretKey key = inKeyRing.getSecretKey(inId);
         if (null == key) {
-            return null;
-        }
-        if (! key.isSigningKey()) {
             return null;
         }
         return key.extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(inPassPhrase.toCharArray()));
