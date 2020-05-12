@@ -109,7 +109,6 @@ public class Main {
         return keyRingGen;
     }
 
-
     /**
      * Illustrates the use of ByteArrayInputStream / ByteArrayOutputStream.
      * @throws IOException
@@ -472,7 +471,6 @@ public class Main {
         ArmoredOutputStream armoredOutputStream;
         ByteArrayOutputStream buffer;
 
-
         UserIDPacket userIDPacket = new UserIDPacket("user@email.org");
         outputFile = "data/packet1.bgp";
         basicOutputStream = new BCPGOutputStream(getFileOutputStream(outputFile));
@@ -510,12 +508,6 @@ public class Main {
         armoredOutputStream.close();
         System.out.printf("gpg --list-packet %s\n", outputFile);
 
-
-
-
-
-
-
         PGPKeyPair kp = createRsaKeyPair();
         PGPKeyPair[] keyPairs1 = {kp};
         PGPKeyRingGenerator keyRingGen = getKeyRingGenerator(keyPairs1,
@@ -523,32 +515,6 @@ public class Main {
                 "password");
         PGPPublicKeyRing pubRing = keyRingGen.generatePublicKeyRing();
         PGPSecretKeyRing secRing = keyRingGen.generateSecretKeyRing();
-
-
-
-//        outputFile = "data/packet3.bgp";
-//        System.out.printf("Create 1 Public Key Ring and write it to \"%s\"\n", outputFile);
-//        basicOutputStream = new BCPGOutputStream(getFileOutputStream(outputFile));
-//        pubRing.encode(basicOutputStream);
-//        basicOutputStream.close();
-//        System.out.printf("gpg --list-packet %s\n", outputFile);
-//
-//        outputFile = "data/packet4.agp";
-//        FileOutputStream fstream = getFileOutputStream(outputFile);
-//        pubRing.encode(fstream);
-//        basicOutputStream.close();
-//        System.out.printf("gpg --list-packet %s\n", outputFile);
-
-
-
-
-
-//        PublicKeyPacket publicKeyPacket = new PublicKeyPacket(pubKey.getAlgorithm(), pubKey.getCreationTime(), pubKey.);
-
-//        basicOutputStream.writePacket();
-//        basicOutputStream.writeObject();
-
-
     }
 
     public static void main(String[] args) {

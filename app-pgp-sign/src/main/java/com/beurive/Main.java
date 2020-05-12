@@ -9,17 +9,16 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.bouncycastle.asn1.cms.CompressedData;
+import org.beurive.pgp.UnexpectedDocumentException;
 import org.bouncycastle.bcpg.*;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
-import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
-import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
-import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
+import org.beurive.pgp.Keyring;
+
 
 public class Main {
 
@@ -46,108 +45,13 @@ public class Main {
     }
 
     /**
-     * Create a BCPGInputStream from a file identified by its given path.
-     * @param inPath Path to the input file.
-     * @return An BCPGInputStream from the file which path was given.
-     * @throws IOException
-     */
-
-    private static BCPGInputStream getBCPGInputStream(String inPath) throws IOException {
-        return new BCPGInputStream(getArmoredInputStream(inPath));
-    }
-
-    /**
-     * Load a secret key ring from a given file.
-     * @param inPath Path to the secret key ring.
-     * @return The secret key ring.
-     * @throws IOException
-     * @throws NullPointerException
-     */
-
-    private static PGPSecretKeyRing loadSecretKeyRing(String inPath)
-            throws IOException, NullPointerException {
-        // Load the secret key ring.
-        ArmoredInputStream inputStream = getArmoredInputStream(inPath);
-        PGPObjectFactory pgpObjectFactory = new PGPObjectFactory(
-                inputStream, new JcaKeyFingerprintCalculator());
-
-        Object pgpObject;
-        PGPSecretKeyRing secretKeyRing = null;
-        while ((pgpObject = pgpObjectFactory.nextObject()) != null) {
-            secretKeyRing = (PGPSecretKeyRing)pgpObject;
-        }
-        inputStream.close();
-        return secretKeyRing;
-    }
-
-    /**
-     * Load a public key ring from a given file.
-     * @param inPath Path to the secret key ring.
-     * @return The secret key ring.
-     * @throws IOException
-     * @throws NullPointerException
-     */
-
-    private static PGPPublicKeyRing loadPublicKeyRing(String inPath)
-            throws IOException, NullPointerException {
-        // Load the secret key ring.
-        ArmoredInputStream inputStream = getArmoredInputStream(inPath);
-        PGPObjectFactory pgpObjectFactory = new PGPObjectFactory(
-                inputStream, new JcaKeyFingerprintCalculator());
-
-        Object pgpObject;
-        PGPPublicKeyRing publicKeyRing = null;
-        while ((pgpObject = pgpObjectFactory.nextObject()) != null) {
-            publicKeyRing = (PGPPublicKeyRing)pgpObject;
-        }
-        inputStream.close();
-        return publicKeyRing;
-    }
-
-    /**
-     * Extract the master private key from a given secret key ring.
-     * @param inSecretKeyRing The secret key ring.
-     * @param inPassPhrase The passphrase required for the private key.
-     * @return The master private key.
-     * @throws PGPException
-     */
-
-    static private PGPPrivateKey getMasterPrivateKey(PGPSecretKeyRing inSecretKeyRing,
-                                                    String inPassPhrase) throws PGPException {
-        return inSecretKeyRing.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(inPassPhrase.toCharArray()));
-    }
-
-    /**
-     * Extract a private key identified by its ID, from a given secret key ring.
-     * @param inSecretKeyRing The secret key ring.
-     * @param inPassPhrase The passphrase required for the private key.
-     * @param inKeyId The secret key ID.
-     * @return If a secret key with the given ID exists, and if this key can be used to sign a document, then the corresponding private key is returned.
-     * Otherwise, the method returns the value null.
-     * @throws PGPException
-     */
-
-    static private PGPPrivateKey getPrivateKey(PGPSecretKeyRing inSecretKeyRing,
-                                              String inPassPhrase,
-                                              long inKeyId) throws PGPException {
-        PGPSecretKey key = inSecretKeyRing.getSecretKey(inKeyId);
-        if (null == key) {
-            return null;
-        }
-        if (! key.isSigningKey()) {
-            return null;
-        }
-        return key.extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(inPassPhrase.toCharArray()));
-    }
-
-    /**
      * Return the list secret keys in a secret ring identified by its path.
      * @param inKeyRingPath The path to the key ring.
      * @return The list of key IDs.
      */
 
-    static private List<PGPSecretKey> getSecretKeyIds(String inKeyRingPath) throws IOException {
-        PGPSecretKeyRing secretKeyRing = loadSecretKeyRing(inKeyRingPath);
+    static private List<PGPSecretKey> getSecretKeyIds(String inKeyRingPath) throws IOException, UnexpectedDocumentException, PGPException {
+        PGPSecretKeyRing secretKeyRing = Keyring.loadSecretKeyring(inKeyRingPath);
         Iterator<PGPSecretKey> it = secretKeyRing.getSecretKeys();
         List<PGPSecretKey> ids = new ArrayList<PGPSecretKey>();
         while(it.hasNext()) {
@@ -183,17 +87,17 @@ public class Main {
                             String inOutputFilePath,
                             String inKeyRingPath,
                             long inSecretKeyId,
-                            String inPassPhrase) throws IOException, PGPException {
+                            String inPassPhrase) throws IOException, PGPException, UnexpectedDocumentException {
 
         byte[] messageCharArray = inDocumentToSign.getBytes();
 
         // Load the private key.
-        PGPSecretKeyRing secretKeyRing = loadSecretKeyRing(inKeyRingPath);
+        PGPSecretKeyRing secretKeyRing = Keyring.loadSecretKeyring(inKeyRingPath);
         PGPPrivateKey privateKey;
         if (0 == inSecretKeyId) {
-            privateKey = getMasterPrivateKey(secretKeyRing, inPassPhrase);
+            privateKey = Keyring.getMasterPrivateKey(secretKeyRing, inPassPhrase);
         } else {
-            privateKey = getPrivateKey(secretKeyRing, inPassPhrase, inSecretKeyId);
+            privateKey = Keyring.getPrivateKeyById(secretKeyRing, inSecretKeyId, inPassPhrase);
             if (null == privateKey) {
                 System.out.printf("ERROR: no secret key with ID %X exists, or this key cannot be used for signing!\n", inSecretKeyId);
                 System.exit(1);
@@ -311,31 +215,6 @@ public class Main {
         armoredOutputStream.close();
     }
 
-//    static private boolean verifySignature(String inSigPath, PGPPublicKeyRing pubKeyRing) throws IOException, PGPException {
-//
-//        // Create a stream reader for PGP objects
-//        ArmoredInputStream armoredinputStream = getArmoredInputStream(inSigPath);
-//        PGPCompressedData data = new PGPCompressedData(armoredinputStream);
-//        // org.bouncycastle.openpgp.PGPCompressedData.getDataStream:
-//        // Return an input stream that decompresses and returns data in the compressed packet.
-//        BCPGInputStream basicIn = new BCPGInputStream(data.getDataStream());
-//
-//        // Create a PGP object factory.
-//        PGPObjectFactory pgpObjectFactory = new PGPObjectFactory(
-//                basicIn, new JcaKeyFingerprintCalculator());
-//
-//        // $ gpg --verify data/signature-master.pgp gpg: Note: sender requested "for-your-eyes-only"
-//        // gpg: Signature made Wed 29 Apr 2020 03:32:11 PM CEST
-//        // gpg:                using RSA key F52712127A58D490
-//        // gpg:                issuer "owner@email.com"
-//        // gpg: Good signature from "owner@email.com" [ultimate]
-//        PGPOnePassSignature sig = ((PGPOnePassSignatureList) pgpObjectFactory.nextObject()).get(0);
-//        // You should get sig.getKeyID() = F52712127A58D490
-//        PGPPublicKey pubKey = pubKeyRing.getPublicKey(sig.getKeyID());
-//
-//        return true;
-//    }
-
     /**
      * Generate a detached signature.
      * @param inInputFilePath Path to the file from which a signature will be generated.
@@ -352,22 +231,18 @@ public class Main {
                                   String inOutputFilePath,
                                   String inKeyRingPath,
                                   long inSecretKeyId,
-                                  String inPassPhrase) throws IOException, PGPException {
+                                  String inPassPhrase)
+            throws IOException, PGPException, UnexpectedDocumentException {
 
         FileInputStream input = new FileInputStream(inInputFilePath);
         byte[] messageCharArray = input.readAllBytes();
 
-        // Load the private key.
-//        PGPSecretKeyRing secretKeyRing = loadSecretKeyRing(inKeyRingPath);
-//        PGPPrivateKey privateKey = secretKeyRing.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(passPhrase));
-//
-//        // Load the private key.
-        PGPSecretKeyRing secretKeyRing = loadSecretKeyRing(inKeyRingPath);
+        PGPSecretKeyRing secretKeyRing = Keyring.loadSecretKeyring(inKeyRingPath);
         PGPPrivateKey privateKey;
         if (0 == inSecretKeyId) {
-            privateKey = getMasterPrivateKey(secretKeyRing, inPassPhrase);
+            privateKey = Keyring.getMasterPrivateKey(secretKeyRing, inPassPhrase);
         } else {
-            privateKey = getPrivateKey(secretKeyRing, inPassPhrase, inSecretKeyId);
+            privateKey = Keyring.getPrivateKeyById(secretKeyRing, inSecretKeyId, inPassPhrase);
             if (null == privateKey) {
                 System.out.printf("ERROR: no secret key with ID %X exists, or this key cannot be used for signing!\n", inSecretKeyId);
                 System.exit(1);
@@ -547,7 +422,8 @@ public class Main {
                     passPhrase);
 
             // Verify the signature.
-            if (verifySignature(sigMaster, loadPublicKeyRing(publicKeyRing))) {
+
+            if (verifySignature(sigMaster, Keyring.loadPublicKeyring(publicKeyRing))) {
                 System.out.printf("The signature \"%s\" is valid.\n", sigMaster);
             } else {
                 System.out.printf("The signature \"%s\" is not valid.\n", sigMaster);
