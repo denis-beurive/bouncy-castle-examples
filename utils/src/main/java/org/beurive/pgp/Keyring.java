@@ -5,6 +5,9 @@ import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class Keyring {
 
@@ -101,4 +104,51 @@ public class Keyring {
         }
         return key.extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(inPassPhrase.toCharArray()));
     }
+
+    /**
+     * Extract the secret keys from a secret keyring.
+     * @param inKeyRing The secret keyring that contains the keys to extract.
+     * @return The method returns an array of secret keys.
+     */
+
+    static public PGPSecretKey[] getSecretKeys(PGPSecretKeyRing inKeyRing) {
+        List<PGPSecretKey> keys = new ArrayList<PGPSecretKey>();
+        Iterator<PGPSecretKey> it = inKeyRing.getSecretKeys();
+        while(it.hasNext()) {
+            keys.add(it.next());
+        }
+        return keys.toArray(new PGPSecretKey[0]);
+    }
+
+    /**
+     * Extract the public keys from a secret keyring.
+     * @param inKeyRing The secret keyring that contains the keys to extract.
+     * @return The method returns an array of public keys.
+     */
+
+    static public PGPPublicKey[] getPublicKeys(PGPSecretKeyRing inKeyRing) {
+        List<PGPPublicKey> keys = new ArrayList<PGPPublicKey>();
+        Iterator<PGPSecretKey> it = inKeyRing.getSecretKeys();
+        while(it.hasNext()) {
+            keys.add(it.next().getPublicKey());
+        }
+        return keys.toArray(new PGPPublicKey[0]);
+    }
+
+    /**
+     * Extract the public keys from a public keyring.
+     * @param inKeyRing The public keyring that contains the keys to extract.
+     * @return The method returns an array of public keys.
+     */
+
+    static public PGPPublicKey[] getPublicKeys(PGPPublicKeyRing inKeyRing) {
+        List<PGPPublicKey> keys = new ArrayList<PGPPublicKey>();
+        Iterator<PGPPublicKey> it = inKeyRing.getPublicKeys();
+        while(it.hasNext()) {
+            keys.add(it.next());
+        }
+        return keys.toArray(new PGPPublicKey[0]);
+    }
+
+
 }
