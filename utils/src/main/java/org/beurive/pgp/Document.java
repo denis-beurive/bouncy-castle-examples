@@ -1,8 +1,7 @@
 package org.beurive.pgp;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.openpgp.PGPCompressedData;
@@ -83,4 +82,18 @@ public class Document {
         inStream.reset();
         return new JcaPGPObjectFactory(new BCPGInputStream(getStream(inStream)));
     }
+
+    /**
+     * Get an object factory for a given PGP document, given as a file identified by its path.
+     * @param inPath Path to the file that contains the document.
+     * @return The method returns an instance of JcaPGPObjectFactory.
+     * @throws IOException
+     * @throws PGPException
+     */
+
+    static public JcaPGPObjectFactory getObjectFactory(String inPath) throws IOException, PGPException {
+        BufferedInputStream inStream = new BufferedInputStream(new FileInputStream(new File(inPath)));
+        return getObjectFactory(inStream);
+    }
+
 }
