@@ -1,4 +1,4 @@
 .
-!*.pgp
 document.txt.bpg
-!.gitignore
+bytes-*
+packet*

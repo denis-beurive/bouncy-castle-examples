@@ -1,3 +1,11 @@
+/**
+ * This file implements the following functionalities:
+ * * generation of a single One Pass Signature (tag=4).
+ * * generation of a Detached Signature (tag=2).
+ * * verification of a single One Pass Signature (tag=4).
+ * * verification of a Detached Signature (tag=2).
+ */
+
 package com.beurive;
 
 import java.io.*;
@@ -22,7 +30,7 @@ import org.beurive.pgp.Stream;
 public class Main {
 
     /**
-     * Create a One Pass Signature (tag=4) by signing a document with a given secret key.
+     * Create a single One Pass Signature (tag=4) by signing a document with a given secret key.
      *
      * The structure of the generated document is:
      *
@@ -67,11 +75,11 @@ public class Main {
      * @throws UnexpectedDocumentException
      */
 
-    static public void sign(String inDocumentToSign,
-                            String inOutputFilePath,
-                            String inKeyRingPath,
-                            long inSecretKeyId,
-                            String inPassPhrase) throws IOException, PGPException, UnexpectedDocumentException {
+    static public void singleOnePassSign(String inDocumentToSign,
+                                         String inOutputFilePath,
+                                         String inKeyRingPath,
+                                         long inSecretKeyId,
+                                         String inPassPhrase) throws IOException, PGPException, UnexpectedDocumentException {
 
         byte[] messageCharArray = inDocumentToSign.getBytes();
 
@@ -101,6 +109,13 @@ public class Main {
         PGPSignatureGenerator signerGenerator = new PGPSignatureGenerator(
                 new JcaPGPContentSignerBuilder(keyAlgorithm, hashAlgorithm).setProvider("BC")
         );
+        // Note about "PGPSignature.BINARY_DOCUMENT".
+        //
+        // See https://tools.ietf.org/html/rfc4880#section-5.2.1
+        //
+        // 0x00: Signature of a binary document.
+        //       This means the signer owns it, created it, or certifies that it
+        //       has not been modified.
         signerGenerator.init(PGPSignature.BINARY_DOCUMENT, privateKey);
 
         // Please note that a Transferable Public Key can have more than one associated user ID.
@@ -294,6 +309,14 @@ public class Main {
         PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
                 new JcaPGPContentSignerBuilder(keyAlgorithm, hashAlgorithm).setProvider("BC")
         );
+
+        // Note about "PGPSignature.BINARY_DOCUMENT".
+        //
+        // See https://tools.ietf.org/html/rfc4880#section-5.2.1
+        //
+        // 0x00: Signature of a binary document.
+        //       This means the signer owns it, created it, or certifies that it
+        //       has not been modified.
         signatureGenerator.init(PGPSignature.BINARY_DOCUMENT, privateKey);
         Iterator<String> it = secretKeyRing.getPublicKey().getUserIDs();
         while (it.hasNext()) {
@@ -329,7 +352,7 @@ public class Main {
     }
 
     /**
-     * Verify a given signature.
+     * Verify a given single One Pass Signature.
      *
      * The structure of the signature being verified is:
      *
@@ -368,7 +391,7 @@ public class Main {
      * @throws Exception
      */
 
-    private static boolean verifySignature(
+    private static boolean verifySingleOnePassSig(
             String inSignatureFile,
             PGPPublicKeyRing pubKeyRing)
             throws Exception
@@ -391,8 +414,8 @@ public class Main {
 
         PGPOnePassSignatureList sigList = (PGPOnePassSignatureList)pgpFact.nextObject();
         PGPOnePassSignature onePassSignature = sigList.get(0);
-        PGPPublicKey key = pubKeyRing.getPublicKey(onePassSignature.getKeyID());
-        onePassSignature.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), key);
+        PGPPublicKey publicKey = pubKeyRing.getPublicKey(onePassSignature.getKeyID());
+        onePassSignature.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), publicKey);
 
         // ----------------------------------------------------------------------------------
         // Load the second packet, which is the Literal Data Packet (tag=11).
@@ -417,6 +440,8 @@ public class Main {
 
         FileOutputStream out = new FileOutputStream(literalData.getFileName());
         int ch;
+        // Please note that we proceed byte per byte to show that it is possible to do so
+        // (in case we need to manipulate very big documents).
         while ((ch = literalDataStream.read()) >= 0)
         {
             // We create the file that was originally signed.
@@ -457,7 +482,67 @@ public class Main {
         return onePassSignature.verify(signaturePacket);
     }
 
+    /**
+     * Verify a given detached signature.
+     *
+     * The structure of the signature being verified is:
+     *
+     * ┌───────────────────────────────────┐
+     * │ Signature Packet (tag=2)          │
+     * └───────────────────────────────────┘
+     *
+     * See https://tools.ietf.org/html/rfc4880#section-11.4
+     *
+     *      Some OpenPGP applications use so-called "detached signatures".  For
+     *      example, a program bundle may contain a file, and with it a second
+     *      file that is a detached signature of the first file.  These detached
+     *      signatures are simply a Signature packet stored separately from the
+     *      data for which they are a signature.
+     *
+     * @param inSignatureFile Path to the file that contains the signature.
+     * @param pubKeyRing The public keyring.
+     * @return If the signature is valid, then the method returns the value true.
+     * Otherwise, it returns the value false.
+     * @throws Exception
+     */
 
+    private static boolean verifyDetachedSig(
+            String inDocument,
+            String inSignatureFile,
+            PGPPublicKeyRing pubKeyRing)
+            throws Exception
+    {
+        // ----------------------------------------------------------------------------------
+        // Load the document that has been signed.
+        // ----------------------------------------------------------------------------------
+
+        FileInputStream documentStream = new FileInputStream(new File(inDocument));
+        byte[] document = documentStream.readAllBytes();
+
+        // ----------------------------------------------------------------------------------
+        // Create a stream reader for PGP objects.
+        // ----------------------------------------------------------------------------------
+
+        JcaPGPObjectFactory pgpFact = Document.getObjectFactory(inSignatureFile);
+
+        // ----------------------------------------------------------------------------------
+        // Load the first packet, which is a Signature Packet (tag=2).
+        // ----------------------------------------------------------------------------------
+
+        PGPSignatureList signatureList = (PGPSignatureList) pgpFact.nextObject();
+        PGPSignature signature = signatureList.get(0);
+
+        // ----------------------------------------------------------------------------------
+        // Configure the PGPSignature object so it can be used to verify the signature.
+        // In order to verify the
+        // ----------------------------------------------------------------------------------
+
+        PGPPublicKey publicKey = pubKeyRing.getPublicKey(signature.getKeyID());
+        signature.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), publicKey);
+        signature.update(document);
+
+        return signature.verify();
+    }
 
     public static void main(String[] args) {
         // Declare the provider "BC" (for Bouncy Castle).
@@ -485,7 +570,7 @@ public class Main {
 
             // Sign with the master key.
             System.out.printf("Sign <%s> using the master key => \"%s\".\n", documentToSign, sigMaster);
-            sign(documentToSign,
+            singleOnePassSign(documentToSign,
                     sigMaster,
                     secretKeyRing,
                     0,
@@ -493,7 +578,7 @@ public class Main {
 
             // Sign with a subkey.
             System.out.printf("Sign <%s> using a sub key [%X] => \"%s\".\n", documentToSign, keys[1].getKeyID(), sigSubKey);
-            sign(documentToSign,
+            singleOnePassSign(documentToSign,
                     sigSubKey,
                     secretKeyRing,
                     keys[1].getKeyID(),
@@ -515,12 +600,34 @@ public class Main {
                     keys[1].getKeyID(),
                     passPhrase);
 
-            // Verify the signature.
+            // Verify the One Pass Signatures.
 
-            if (verifySignature(sigMaster, Keyring.loadPublicKeyring(publicKeyRing))) {
+            PGPPublicKeyRing pubKeyRing = Keyring.loadPublicKeyring(publicKeyRing);
+
+            if (verifySingleOnePassSig(sigMaster, pubKeyRing)) {
                 System.out.printf("The signature \"%s\" is valid.\n", sigMaster);
             } else {
                 System.out.printf("The signature \"%s\" is not valid.\n", sigMaster);
+            }
+
+            if (verifySingleOnePassSig(sigSubKey, pubKeyRing)) {
+                System.out.printf("The signature \"%s\" is valid.\n", sigSubKey);
+            } else {
+                System.out.printf("The signature \"%s\" is not valid.\n", sigSubKey);
+            }
+
+            // Verify the detached signatures.
+
+            if (verifyDetachedSig(fileToSign, sigDetachedMaster, pubKeyRing)) {
+                System.out.printf("The signature \"%s\" is valid.\n", sigDetachedMaster);
+            } else {
+                System.out.printf("The signature \"%s\" is not valid.\n", sigDetachedMaster);
+            }
+
+            if (verifyDetachedSig(fileToSign, sigDetachedMaster, pubKeyRing)) {
+                System.out.printf("The signature \"%s\" is valid.\n", sigDetachedSubKey);
+            } else {
+                System.out.printf("The signature \"%s\" is not valid.\n", sigDetachedSubKey);
             }
 
         } catch (Exception e) {

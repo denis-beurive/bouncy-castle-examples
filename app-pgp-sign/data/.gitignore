@@ -1,6 +1,2 @@
 signature-*.pgp
-signature.pgp
 detached-signature-*.pgp
-detached-signature.pgp
-document.txt
-doc.sig
