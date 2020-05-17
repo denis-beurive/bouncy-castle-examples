@@ -45,6 +45,7 @@ Sample output:
     Sign <Message to sign> using a sub key [DF4C6FED0763B6A9] => "./data/signature-subkey.pgp".
     Detach sign <./data/document-to-sign.txt> using the master key => "./data/detached-signature-master.pgp".
     Detach sign <./data/document-to-sign.txt> using the sub key [DF4C6FED0763B6A9] => "./data/detached-signature-subkey.pgp".
+    Re-sign <./data/document-to-sign.txt> using the sub key [F52712127A58D490] => "./data/resig-signature-master.pgp".
     The signature "./data/signature-master.pgp" is valid.
     The signature "./data/signature-subkey.pgp" is valid.
     The signature "./data/detached-signature-master.pgp" is valid.
@@ -62,9 +63,15 @@ Import this key into the GPG private and public key rings.
     $ gpg --import data/secret-keyring.pgp # (password: "password")
     $ gpg --import data/public-keyring.pgp
 
-Once this is done, we must declare the master key into the GPG [trust database](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto). 
+Once this is done, we must declare the master key and the subkey into the GPG [trust database](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto). 
 
     & gpg --edit-key F52712127A58D490
+    -> "trust" [ENTER]
+    -> "5" [ENTER]
+    -> "o" [ENTER]
+    -> "quit" [ENTER]
+    
+    & gpg --edit-key DF4C6FED0763B6A9
     -> "trust" [ENTER]
     -> "5" [ENTER]
     -> "o" [ENTER]
@@ -89,3 +96,6 @@ For the detached signature:
 
     gpg --verify data/detached-signature-subkey.pgp data/document-to-sign.txt
 
+For the double signature:
+
+    gpg --verify data/resig-signature-master.pgp

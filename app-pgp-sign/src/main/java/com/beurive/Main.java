@@ -32,6 +32,8 @@ import org.beurive.pgp.Stream;
 
 public class Main {
 
+        static Date now = new Date();
+
         /**
          * Create a single One Pass Signature (tag=4) by signing a document with a given secret key.
          *
@@ -92,16 +94,18 @@ public class Main {
 
         PGPSecretKeyRing secretKeyRing = Keyring.loadSecretKeyring(inKeyRingPath);
         PGPPrivateKey privateKey;
+        PGPPublicKey publicKey;
         if (0 == inSecretKeyId) {
             privateKey = Keyring.getMasterPrivateKey(secretKeyRing, inPassPhrase);
+            publicKey = secretKeyRing.getPublicKey();
         } else {
             privateKey = Keyring.getPrivateKeyById(secretKeyRing, inSecretKeyId, inPassPhrase);
             if (null == privateKey) {
                 System.out.printf("ERROR: no secret key with ID %X exists, or this key cannot be used for signing!\n", inSecretKeyId);
                 System.exit(1);
             }
+            publicKey = secretKeyRing.getPublicKey(inSecretKeyId);
         }
-        PGPPublicKey pgpPublicMasterKey = secretKeyRing.getPublicKey();
 
         // ----------------------------------------------------------------------------------
         // Create a signature generator.
@@ -123,7 +127,7 @@ public class Main {
 
         // Please note that a Transferable Public Key can have more than one associated user ID.
         // See https://tools.ietf.org/html/rfc4880#section-11.1
-        Iterator<String> it = pgpPublicMasterKey.getUserIDs();
+        Iterator<String> it = publicKey.getUserIDs();
         while (it.hasNext()) {
             String userId = it.next();
             PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
@@ -195,7 +199,7 @@ public class Main {
                 PGPLiteralData.CONSOLE,  // the name of the "file" to encode in the literal data object.
                                          // The special name indicating a "for your eyes only" packet.
                 messageCharArray.length, // the length of the data that will be written.
-                new Date());             // the time of last modification we want stored.
+                now);                    // the time of last modification we want stored.
         lOut.write(messageCharArray);
 
         // ┌───────────────────────────────────┐
@@ -273,12 +277,11 @@ public class Main {
         // Extract the necessary data from the secret keyring.
         // ----------------------------------------------------------------------------------
 
-        PGPPublicKey publicMasterKey = inSecretKeyRing.getPublicKey();
         PGPSecretKey secretKey = inSecretKeyRing.getSecretKey(inKeyId);
         if (null == secretKey) {
             throw new UnexpectedKeyException(String.format("Cannot find any key which ID is %X", inKeyId));
         }
-
+        PGPPublicKey publicKey = secretKey.getPublicKey();
         PGPPrivateKey privateKey = secretKey.extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(inPassPhrase.toCharArray()));
 
         // ----------------------------------------------------------------------------------
@@ -301,7 +304,7 @@ public class Main {
 
         // Please note that a Transferable Public Key can have more than one associated user ID.
         // See https://tools.ietf.org/html/rfc4880#section-11.1
-        Iterator<String> it = publicMasterKey.getUserIDs();
+        Iterator<String> it = publicKey.getUserIDs();
         while (it.hasNext()) {
             String userId = it.next();
             PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
@@ -471,7 +474,7 @@ public class Main {
                 PGPLiteralData.CONSOLE,  // the name of the "file" to encode in the literal data object.
                 // The special name indicating a "for your eyes only" packet.
                 document.length, // the length of the data that will be written.
-                new Date());     // the time of last modification we want stored.
+                now);            // the time of last modification we want stored.
         lOut.write(document);
         lGen.close();
 
@@ -842,6 +845,7 @@ public class Main {
         String fileToSignPath = "./data/document-to-sign.txt";
         String sigMasterPath = "./data/signature-master.pgp";
         String sigSubKeyPath = "./data/signature-subkey.pgp";
+        String sigSubKeyPathBis = "./data/signature-subkey-bis.pgp";
         String sigDetachedMasterPath = "./data/detached-signature-master.pgp";
         String sigDetachedSubKeyPath = "./data/detached-signature-subkey.pgp";
         String reSigDocumentPath = "./data/resig-signature-master.pgp";
@@ -869,6 +873,15 @@ public class Main {
             System.out.printf("Sign <%s> using a sub key [%X] => \"%s\".\n", documentToSign, keys[1].getKeyID(), sigSubKeyPath);
             singleOnePassSign(documentToSign,
                     sigSubKeyPath,
+                    secretKeyRingPath,
+                    keys[1].getKeyID(),
+                    passPhrase);
+
+            // Sign with a subkey again.
+            // So we can compare the 2 files.
+            System.out.printf("Sign <%s> using a sub key [%X] => \"%s\".\n", documentToSign, keys[1].getKeyID(), sigSubKeyPathBis);
+            singleOnePassSign(documentToSign,
+                    sigSubKeyPathBis,
                     secretKeyRingPath,
                     keys[1].getKeyID(),
                     passPhrase);
@@ -922,7 +935,6 @@ public class Main {
             }
 
             // Verify the detached signatures.
-
             if (verifyDetachedSig(fileToSignPath, sigDetachedMasterPath, pubKeyRing)) {
                 System.out.printf("The signature \"%s\" is valid.\n", sigDetachedMasterPath);
             } else {
