@@ -108,14 +108,18 @@ public class Keyring {
     /**
      * Extract the secret keys from a secret keyring.
      * @param inKeyRing The secret keyring that contains the keys to extract.
+     * @param inUsedForSigning Flag that tells whether the method should return the only the subkeys suitable for
+     * signing or not.
      * @return The method returns an array of secret keys.
      */
 
-    static public PGPSecretKey[] getSecretKeys(PGPSecretKeyRing inKeyRing) {
+    static public PGPSecretKey[] getSecretKeys(PGPSecretKeyRing inKeyRing, boolean inUsedForSigning) {
         List<PGPSecretKey> keys = new ArrayList<PGPSecretKey>();
         Iterator<PGPSecretKey> it = inKeyRing.getSecretKeys();
         while(it.hasNext()) {
-            keys.add(it.next());
+            PGPSecretKey secretKey = it.next();
+            if (inUsedForSigning && (! secretKey.isSigningKey())) continue;
+            keys.add(secretKey);
         }
         return keys.toArray(new PGPSecretKey[0]);
     }

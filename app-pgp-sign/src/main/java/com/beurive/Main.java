@@ -1,6 +1,7 @@
 /**
  * This file implements the following functionalities:
  * * generation of a single One Pass Signature (tag=4).
+ * * generation of a "double* One Pass Signature (tag=4).
  * * generation of a Detached Signature (tag=2).
  * * verification of a single One Pass Signature (tag=4).
  * * verification of a Detached Signature (tag=2).
@@ -19,6 +20,8 @@ import org.beurive.pgp.UnexpectedDocumentException;
 import org.bouncycastle.bcpg.*;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -29,51 +32,51 @@ import org.beurive.pgp.Stream;
 
 public class Main {
 
-    /**
-     * Create a single One Pass Signature (tag=4) by signing a document with a given secret key.
-     *
-     * The structure of the generated document is:
-     *
-     * ┌───────────────────────────────────┐
-     * │ One Pass Signature Packet (tag=4) │
-     * └───────────────────────────────────┘
-     * ┌───────────────────────────────────┐
-     * │ Literal Data Packet (tag=11)      │
-     * └───────────────────────────────────┘
-     * ┌───────────────────────────────────┐
-     * │ Signature Packet (tag=2)          │
-     * └───────────────────────────────────┘
-     *
-     * See https://tools.ietf.org/html/rfc4880#section-5.4:
-     *
-     *      The One-Pass Signature packet precedes the signed data and contains
-     *      enough information to allow the receiver to begin calculating any
-     *      hashes needed to verify the signature. It allows the Signature
-     *      packet to be placed at the end of the message, so that the signer
-     *      can compute the entire signed message in one pass.
-     *
-     * The One Pass Signature packet contains the following data:
-     *      - the signature type.
-     *      - the hash algorithm used.
-     *      - the public-key algorithm used.
-     *      - the Key ID of the signing key.
-     *      - a flag showing whether the signature is nested.
-     *
-     * Please note that the One Pass Signature packet object does **NOT**
-     * contain the actual signature, nor the document that has been signed.
-     * The document that is being signed is contained into the Literal Data Packet
-     * (tag=11). The signature is contained into the Signature Packet (tag=2).
-     *
-     * @param inDocumentToSign A string that represents the content of the document to sign.
-     * @param inOutputFilePath The path to the signature file.
-     * @param inKeyRingPath The path to the secret keyring.
-     * @param inSecretKeyId The ID of the secret key to use.
-     * If the given value is 0, then the master key is used.
-     * @param inPassPhrase The passphrase used to activate the secret key.
-     * @throws IOException
-     * @throws PGPException
-     * @throws UnexpectedDocumentException
-     */
+        /**
+         * Create a single One Pass Signature (tag=4) by signing a document with a given secret key.
+         *
+         * The structure of the generated document is:
+         *
+         * ┌───────────────────────────────────┐
+         * │ One Pass Signature Packet (tag=4) │
+         * └───────────────────────────────────┘
+         * ┌───────────────────────────────────┐
+         * │ Literal Data Packet (tag=11)      │
+         * └───────────────────────────────────┘
+         * ┌───────────────────────────────────┐
+         * │ Signature Packet (tag=2)          │
+         * └───────────────────────────────────┘
+         *
+         * See https://tools.ietf.org/html/rfc4880#section-5.4:
+         *
+         *      The One-Pass Signature packet precedes the signed data and contains
+         *      enough information to allow the receiver to begin calculating any
+         *      hashes needed to verify the signature. It allows the Signature
+         *      packet to be placed at the end of the message, so that the signer
+         *      can compute the entire signed message in one pass.
+         *
+         * The One Pass Signature packet contains the following data:
+         *      - the signature type.
+         *      - the hash algorithm used.
+         *      - the public-key algorithm used.
+         *      - the Key ID of the signing key.
+         *      - a flag showing whether the signature is nested.
+         *
+         * Please note that the One Pass Signature packet object does **NOT**
+         * contain the actual signature, nor the document that has been signed.
+         * The document that is being signed is contained into the Literal Data Packet
+         * (tag=11). The signature is contained into the Signature Packet (tag=2).
+         *
+         * @param inDocumentToSign A string that represents the content of the document to sign.
+         * @param inOutputFilePath The path to the signature file.
+         * @param inKeyRingPath The path to the secret keyring.
+         * @param inSecretKeyId The ID of the secret key to use.
+         * If the given value is 0, then the master key is used.
+         * @param inPassPhrase The passphrase used to activate the secret key.
+         * @throws IOException
+         * @throws PGPException
+         * @throws UnexpectedDocumentException
+         */
 
     static public void singleOnePassSign(String inDocumentToSign,
                                          String inOutputFilePath,
@@ -247,6 +250,291 @@ public class Main {
     }
 
     /**
+     * Generate the data that make a One Pass Signature document:
+     * * a One Pass Signature Packet (tag=4)
+     * * a Signature Packet (tag=2)
+     * @param inDocumentToSign The input stream to the document to sign.
+     * @param inSecretKeyRing The secret keyring that contains the secret key to use.
+     * @param inKeyId The ID of the signing key to use.
+     * @param inPassPhrase The passphrase that protects the private key.
+     * @return The method returns an instance of OnePassSignatureData.
+     * @throws IOException
+     * @throws PGPException
+     * @throws UnexpectedKeyException
+     */
+
+    static private OnePassSignatureData generateSingleOnePassSignData(
+            InputStream inDocumentToSign,
+            PGPSecretKeyRing inSecretKeyRing,
+            long inKeyId,
+            String inPassPhrase) throws IOException, PGPException, UnexpectedKeyException {
+
+        // ----------------------------------------------------------------------------------
+        // Extract the necessary data from the secret keyring.
+        // ----------------------------------------------------------------------------------
+
+        PGPPublicKey publicMasterKey = inSecretKeyRing.getPublicKey();
+        PGPSecretKey secretKey = inSecretKeyRing.getSecretKey(inKeyId);
+        if (null == secretKey) {
+            throw new UnexpectedKeyException(String.format("Cannot find any key which ID is %X", inKeyId));
+        }
+
+        PGPPrivateKey privateKey = secretKey.extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(inPassPhrase.toCharArray()));
+
+        // ----------------------------------------------------------------------------------
+        // Create a signature generator.
+        // ----------------------------------------------------------------------------------
+
+        int keyAlgorithm = privateKey.getPublicKeyPacket().getAlgorithm();
+        int hashAlgorithm = PGPUtil.SHA256;
+        PGPSignatureGenerator signerGenerator = new PGPSignatureGenerator(
+                new JcaPGPContentSignerBuilder(keyAlgorithm, hashAlgorithm).setProvider("BC")
+        );
+        // Note about "PGPSignature.BINARY_DOCUMENT".
+        //
+        // See https://tools.ietf.org/html/rfc4880#section-5.2.1
+        //
+        // 0x00: Signature of a binary document.
+        //       This means the signer owns it, created it, or certifies that it
+        //       has not been modified.
+        signerGenerator.init(PGPSignature.BINARY_DOCUMENT, privateKey);
+
+        // Please note that a Transferable Public Key can have more than one associated user ID.
+        // See https://tools.ietf.org/html/rfc4880#section-11.1
+        Iterator<String> it = publicMasterKey.getUserIDs();
+        while (it.hasNext()) {
+            String userId = it.next();
+            PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
+            spGen.setSignerUserID(false, userId);
+            signerGenerator.setHashedSubpackets(spGen.generate());
+        }
+        signerGenerator.update(inDocumentToSign.readAllBytes());
+
+        // ----------------------------------------------------------------------------------
+        // Create the One Pass Signature Packet.
+        // ----------------------------------------------------------------------------------
+
+        PGPOnePassSignature onePassSignaturePacket = signerGenerator.generateOnePassVersion(false);
+
+        return new OnePassSignatureData(onePassSignaturePacket, signerGenerator);
+    }
+
+    /**
+     * Add a One Pass Signature to a given One Pass Signature document.
+     *
+     * For example, let's consider the following One Pass Signature document:
+     *
+     * ┌─────────────────────────────────────┐
+     * │ One Pass Signature Packet A (tag=4) │
+     * └─────────────────────────────────────┘
+     * ┌─────────────────────────────────────┐
+     * │ Literal Data Packet (tag=11)        │
+     * └─────────────────────────────────────┘
+     * ┌─────────────────────────────────────┐
+     * │ Signature Packet A (tag=2)          │
+     * └─────────────────────────────────────┘
+     *
+     * Please note that it is possible to add a One Pass Signature Packet to an existing
+     * document that contains more than one One Pass Signature Packet.
+     *
+     * After calling this method, you generate a new document with the following structure:
+     *
+     * ┌─────────────────────────────────────┐
+     * │ One Pass Signature Packet A (tag=4) │
+     * └─────────────────────────────────────┘
+     * ┌─────────────────────────────────────┐
+     * │ One Pass Signature Packet B (tag=4) │
+     * └─────────────────────────────────────┘
+     * ┌─────────────────────────────────────┐
+     * │ Literal Data Packet (tag=11)        │
+     * └─────────────────────────────────────┘
+     * ┌─────────────────────────────────────┐
+     * │ Signature Packet B (tag=2)          │
+     * └─────────────────────────────────────┘
+     * ┌─────────────────────────────────────┐
+     * │ Signature Packet A (tag=2)          │
+     * └─────────────────────────────────────┘
+     *
+     * See https://tools.ietf.org/html/rfc4880#section-5.4
+     *
+     *      Note that if a message contains more than one one-pass signature,
+     *      then the Signature packets bracket the message; that is, the first
+     *      Signature packet after the message corresponds to the last one-pass
+     *      packet and the final Signature packet corresponds to the first
+     *      one-pass packet.
+     *
+     * @param inSignatureDocument The One Pass Signature document.
+     * @param inSecretKeyRing The secret keyring to use.
+     * @param inKeyId The ID if the to use.
+     * @param inPassPhrase The password that protects the private key to used.
+     * @return The method returns an ByteArrayOutputStream that contains the
+     * new One Pass Signature document.
+     * @throws PGPException
+     * @throws IOException
+     * @throws UnexpectedKeyException
+     */
+
+    public static ByteArrayOutputStream OnePassSignatureReSign(
+            BufferedInputStream inSignatureDocument,
+            PGPSecretKeyRing inSecretKeyRing,
+            long inKeyId,
+            String inPassPhrase
+    ) throws PGPException, IOException, UnexpectedKeyException {
+
+        // ----------------------------------------------------------------------------------
+        // Create a stream reader for PGP objects.
+        // ----------------------------------------------------------------------------------
+
+        JcaPGPObjectFactory pgpFact = Document.getObjectFactory(inSignatureDocument);
+
+        // ----------------------------------------------------------------------------------
+        // Load the first One Pass Signature.
+        // ----------------------------------------------------------------------------------
+
+        PGPOnePassSignatureList sigList = (PGPOnePassSignatureList)pgpFact.nextObject();
+
+        // ----------------------------------------------------------------------------------
+        // Load the second packet, which is the Literal Data Packet (tag=11).
+        // Please note that a PGPLiteralData object cannot be encoded directly within an
+        // output stream.
+        // ----------------------------------------------------------------------------------
+
+        PGPLiteralData literalData = (PGPLiteralData)pgpFact.nextObject();
+        InputStream literalDataStream = literalData.getInputStream();
+        byte[] document = literalDataStream.readAllBytes();
+
+        // ----------------------------------------------------------------------------------
+        // Load the third packet, which is the Signature Packet (tag=2).
+        // ----------------------------------------------------------------------------------
+
+        PGPSignatureList signatureList = (PGPSignatureList)pgpFact.nextObject();
+
+        // ----------------------------------------------------------------------------------
+        // Generate the new Open Pass Signature Packet (tag=4) and the new Signature
+        // Packet (tag=2).
+        // ----------------------------------------------------------------------------------
+
+        OnePassSignatureData newPackets = generateSingleOnePassSignData(
+                literalDataStream,
+                inSecretKeyRing,
+                inKeyId,
+                inPassPhrase);
+
+        // ----------------------------------------------------------------------------------
+        // We have all the objects required to generate the new signature document:
+        // * The list of One Pass Signature Packets (tag=4) found in the original signature
+        //   document.
+        // * The content of the document that has been signed.
+        // * The list of Signature Packets (tag=2) found in the original signature document.
+        // ----------------------------------------------------------------------------------
+
+        PGPCompressedDataGenerator compressDataGenerator = new PGPCompressedDataGenerator(PGPCompressedData.ZLIB);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        BCPGOutputStream basicOut = new BCPGOutputStream(compressDataGenerator.open(outputStream));
+
+        // ----------------------------------------------------------------------------------
+        // Write the existing One Pass Signature Packet (tag=4)
+        // ----------------------------------------------------------------------------------
+
+        Iterator<PGPOnePassSignature> onePassSigIt = sigList.iterator();
+        while(onePassSigIt.hasNext()) {
+            onePassSigIt.next().encode(basicOut);
+        }
+
+        // Result:
+        // ┌─────────────────────────────────────┐
+        // │ One Pass Signature Packet A (tag=4) │
+        // └─────────────────────────────────────┘
+
+        // ----------------------------------------------------------------------------------
+        // Write the new One Pass Signature Packet (tag=4)
+        // ----------------------------------------------------------------------------------
+
+        newPackets.getOnePassSignaturePacket().encode(basicOut);
+
+        // Result:
+        // ┌─────────────────────────────────────┐
+        // │ One Pass Signature Packet A (tag=4) │
+        // └─────────────────────────────────────┘
+        // ┌─────────────────────────────────────┐
+        // │ One Pass Signature Packet B (tag=4) │
+        // └─────────────────────────────────────┘
+
+        // ----------------------------------------------------------------------------------
+        // Write the Literal Data Packet (tag=11)
+        // ----------------------------------------------------------------------------------
+
+        PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
+        OutputStream lOut = lGen.open(
+                basicOut,                // the underlying output stream to write the literal data packet to.
+                PGPLiteralData.BINARY,   // the format of the literal data that will be written to the output stream.
+                PGPLiteralData.CONSOLE,  // the name of the "file" to encode in the literal data object.
+                // The special name indicating a "for your eyes only" packet.
+                document.length, // the length of the data that will be written.
+                new Date());     // the time of last modification we want stored.
+        lOut.write(document);
+        lGen.close();
+
+        // Result:
+        // ┌─────────────────────────────────────┐
+        // │ One Pass Signature Packet A (tag=4) │
+        // └─────────────────────────────────────┘
+        // ┌─────────────────────────────────────┐
+        // │ One Pass Signature Packet B (tag=4) │
+        // └─────────────────────────────────────┘
+        // ┌─────────────────────────────────────┐
+        // │ Literal Data Packet (tag=11)        │
+        // └─────────────────────────────────────┘
+
+        // ----------------------------------------------------------------------------------
+        // Write the Signature Packets (tag=2).
+        // ----------------------------------------------------------------------------------
+
+        // Write the newly generated Signature Packet
+        newPackets.getSignerGenerator().generate().encode(basicOut);
+
+        // Result:
+        // ┌─────────────────────────────────────┐
+        // │ One Pass Signature Packet A (tag=4) │
+        // └─────────────────────────────────────┘
+        // ┌─────────────────────────────────────┐
+        // │ One Pass Signature Packet B (tag=4) │
+        // └─────────────────────────────────────┘
+        // ┌─────────────────────────────────────┐
+        // │ Literal Data Packet (tag=11)        │
+        // └─────────────────────────────────────┘
+        // ┌─────────────────────────────────────┐
+        // │ Signature Packet B (tag=2)          │
+        // └─────────────────────────────────────┘
+
+        // Write the existing Signature Packets
+        Iterator<PGPSignature> signatureIterator = signatureList.iterator();
+        while (signatureIterator.hasNext()) {
+            signatureIterator.next().encode(basicOut);
+        }
+
+        // Result:
+        // ┌─────────────────────────────────────┐
+        // │ One Pass Signature Packet A (tag=4) │
+        // └─────────────────────────────────────┘
+        // ┌─────────────────────────────────────┐
+        // │ One Pass Signature Packet B (tag=4) │
+        // └─────────────────────────────────────┘
+        // ┌─────────────────────────────────────┐
+        // │ Literal Data Packet (tag=11)        │
+        // └─────────────────────────────────────┘
+        // ┌─────────────────────────────────────┐
+        // │ Signature Packet B (tag=2)          │
+        // └─────────────────────────────────────┘
+        // ┌─────────────────────────────────────┐
+        // │ Signature Packet A (tag=2)          │
+        // └─────────────────────────────────────┘
+
+        compressDataGenerator.close();
+        return outputStream;
+    }
+
+    /**
      * Generate a detached signature.
      *
      * The structure of the generated document is:
@@ -385,14 +673,14 @@ public class Main {
      * contain the actual signature, nor the document that has been signed.
      * It contains date need to verify the signature.
      *
-     * @param inSignatureFile
+     * @param inSignatureFilePath
      * @param pubKeyRing
      * @return
      * @throws Exception
      */
 
     private static boolean verifySingleOnePassSig(
-            String inSignatureFile,
+            String inSignatureFilePath,
             PGPPublicKeyRing pubKeyRing)
             throws Exception
     {
@@ -400,7 +688,7 @@ public class Main {
         // Create a stream reader for PGP objects.
         // ----------------------------------------------------------------------------------
 
-        JcaPGPObjectFactory pgpFact = Document.getObjectFactory(inSignatureFile);
+        JcaPGPObjectFactory pgpFact = Document.getObjectFactory(inSignatureFilePath);
 
         // ----------------------------------------------------------------------------------
         // Load the first packet, which is the One Pass Signature Packet (tag=4).
@@ -549,18 +837,19 @@ public class Main {
         Security.addProvider(new BouncyCastleProvider());
         String documentToSign = "Message to sign";
         String passPhrase = "password";
-        String secretKeyRing = "./data/secret-keyring.pgp";
-        String publicKeyRing = "./data/public-keyring.pgp";
-        String fileToSign = "./data/document-to-sign.txt";
-        String sigMaster = "./data/signature-master.pgp";
-        String sigSubKey = "./data/signature-subkey.pgp";
-        String sigDetachedMaster = "./data/detached-signature-master.pgp";
-        String sigDetachedSubKey = "./data/detached-signature-subkey.pgp";
+        String secretKeyRingPath = "./data/secret-keyring.pgp";
+        String publicKeyRingPath = "./data/public-keyring.pgp";
+        String fileToSignPath = "./data/document-to-sign.txt";
+        String sigMasterPath = "./data/signature-master.pgp";
+        String sigSubKeyPath = "./data/signature-subkey.pgp";
+        String sigDetachedMasterPath = "./data/detached-signature-master.pgp";
+        String sigDetachedSubKeyPath = "./data/detached-signature-subkey.pgp";
+        String reSigDocumentPath = "./data/resig-signature-master.pgp";
 
         try {
             // Print the list of key IDs in the secret key ring.
-            System.out.printf("List of key IDs in the key ring \"%s\":\n", secretKeyRing);
-            PGPSecretKey[] keys = Keyring.getSecretKeys(Keyring.loadSecretKeyring(secretKeyRing));
+            System.out.printf("List of key IDs in the key ring \"%s\":\n", secretKeyRingPath);
+            PGPSecretKey[] keys = Keyring.getSecretKeys(Keyring.loadSecretKeyring(secretKeyRingPath), false);
             for (PGPSecretKey k: keys) {
                 System.out.printf("\t- %016X (sign ? %s, master ? %s)\n",
                         k.getKeyID(),
@@ -569,65 +858,81 @@ public class Main {
             }
 
             // Sign with the master key.
-            System.out.printf("Sign <%s> using the master key => \"%s\".\n", documentToSign, sigMaster);
+            System.out.printf("Sign <%s> using the master key => \"%s\".\n", documentToSign, sigMasterPath);
             singleOnePassSign(documentToSign,
-                    sigMaster,
-                    secretKeyRing,
+                    sigMasterPath,
+                    secretKeyRingPath,
                     0,
                     passPhrase);
 
             // Sign with a subkey.
-            System.out.printf("Sign <%s> using a sub key [%X] => \"%s\".\n", documentToSign, keys[1].getKeyID(), sigSubKey);
+            System.out.printf("Sign <%s> using a sub key [%X] => \"%s\".\n", documentToSign, keys[1].getKeyID(), sigSubKeyPath);
             singleOnePassSign(documentToSign,
-                    sigSubKey,
-                    secretKeyRing,
+                    sigSubKeyPath,
+                    secretKeyRingPath,
                     keys[1].getKeyID(),
                     passPhrase);
 
             // Detach sign with the master key.
-            System.out.printf("Detach sign <%s> using the master key => \"%s\".\n", fileToSign, sigDetachedMaster);
-            detachSign(fileToSign,
-                    sigDetachedMaster,
-                    secretKeyRing,
+            System.out.printf("Detach sign <%s> using the master key => \"%s\".\n", fileToSignPath, sigDetachedMasterPath);
+            detachSign(fileToSignPath,
+                    sigDetachedMasterPath,
+                    secretKeyRingPath,
                     0,
                     passPhrase);
 
             // Detach sign with a sub key.
-            System.out.printf("Detach sign <%s> using the sub key [%X] => \"%s\".\n", fileToSign, keys[1].getKeyID(), sigDetachedSubKey);
-            detachSign(fileToSign,
-                    sigDetachedSubKey,
-                    secretKeyRing,
+            System.out.printf("Detach sign <%s> using the sub key [%X] => \"%s\".\n", fileToSignPath, keys[1].getKeyID(), sigDetachedSubKeyPath);
+            detachSign(fileToSignPath,
+                    sigDetachedSubKeyPath,
+                    secretKeyRingPath,
                     keys[1].getKeyID(),
                     passPhrase);
 
+            // Add the One Pass Signature to an existing One Pass Signature document.
+            BufferedInputStream document = new BufferedInputStream(new FileInputStream(new File(sigMasterPath)));
+            PGPSecretKeyRing secretKeyRing = Keyring.loadSecretKeyring(secretKeyRingPath);
+            PGPSecretKey[] secretSigningKeys = Keyring.getSecretKeys(secretKeyRing, true);
+            PGPSecretKey resigningSecretKey = secretSigningKeys[0];
+            System.out.printf("Re-sign <%s> using the sub key [%X] => \"%s\".\n",
+                    fileToSignPath,
+                    resigningSecretKey.getKeyID(),
+                    reSigDocumentPath);
+            ByteArrayOutputStream newDoc = OnePassSignatureReSign(
+                    document,
+                    secretKeyRing,
+                    secretSigningKeys[1].getKeyID(),
+                    passPhrase);
+            FileOutputStream outFile = new FileOutputStream(new File(reSigDocumentPath));
+            outFile.write(newDoc.toByteArray());
+
             // Verify the One Pass Signatures.
+            PGPPublicKeyRing pubKeyRing = Keyring.loadPublicKeyring(publicKeyRingPath);
 
-            PGPPublicKeyRing pubKeyRing = Keyring.loadPublicKeyring(publicKeyRing);
-
-            if (verifySingleOnePassSig(sigMaster, pubKeyRing)) {
-                System.out.printf("The signature \"%s\" is valid.\n", sigMaster);
+            if (verifySingleOnePassSig(sigMasterPath, pubKeyRing)) {
+                System.out.printf("The signature \"%s\" is valid.\n", sigMasterPath);
             } else {
-                System.out.printf("The signature \"%s\" is not valid.\n", sigMaster);
+                System.out.printf("The signature \"%s\" is not valid.\n", sigMasterPath);
             }
 
-            if (verifySingleOnePassSig(sigSubKey, pubKeyRing)) {
-                System.out.printf("The signature \"%s\" is valid.\n", sigSubKey);
+            if (verifySingleOnePassSig(sigSubKeyPath, pubKeyRing)) {
+                System.out.printf("The signature \"%s\" is valid.\n", sigSubKeyPath);
             } else {
-                System.out.printf("The signature \"%s\" is not valid.\n", sigSubKey);
+                System.out.printf("The signature \"%s\" is not valid.\n", sigSubKeyPath);
             }
 
             // Verify the detached signatures.
 
-            if (verifyDetachedSig(fileToSign, sigDetachedMaster, pubKeyRing)) {
-                System.out.printf("The signature \"%s\" is valid.\n", sigDetachedMaster);
+            if (verifyDetachedSig(fileToSignPath, sigDetachedMasterPath, pubKeyRing)) {
+                System.out.printf("The signature \"%s\" is valid.\n", sigDetachedMasterPath);
             } else {
-                System.out.printf("The signature \"%s\" is not valid.\n", sigDetachedMaster);
+                System.out.printf("The signature \"%s\" is not valid.\n", sigDetachedMasterPath);
             }
 
-            if (verifyDetachedSig(fileToSign, sigDetachedMaster, pubKeyRing)) {
-                System.out.printf("The signature \"%s\" is valid.\n", sigDetachedSubKey);
+            if (verifyDetachedSig(fileToSignPath, sigDetachedMasterPath, pubKeyRing)) {
+                System.out.printf("The signature \"%s\" is valid.\n", sigDetachedSubKeyPath);
             } else {
-                System.out.printf("The signature \"%s\" is not valid.\n", sigDetachedSubKey);
+                System.out.printf("The signature \"%s\" is not valid.\n", sigDetachedSubKeyPath);
             }
 
         } catch (Exception e) {
