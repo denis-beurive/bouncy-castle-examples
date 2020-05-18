@@ -268,7 +268,7 @@ public class Main {
      */
 
     static private OnePassSignatureData generateSingleOnePassSignData(
-            InputStream inDocumentToSign,
+            byte[] inDocumentToSign,
             PGPSecretKeyRing inSecretKeyRing,
             long inKeyId,
             String inPassPhrase) throws IOException, PGPException, UnexpectedKeyException {
@@ -317,6 +317,7 @@ public class Main {
         // ----------------------------------------------------------------------------------
 
         PGPOnePassSignature onePassSignaturePacket = signerGenerator.generateOnePassVersion(false);
+        signerGenerator.update(inDocumentToSign);
 
         return new OnePassSignatureData(onePassSignaturePacket, signerGenerator);
     }
@@ -417,7 +418,7 @@ public class Main {
         // ----------------------------------------------------------------------------------
 
         OnePassSignatureData newPackets = generateSingleOnePassSignData(
-                literalDataStream,
+                document,
                 inSecretKeyRing,
                 inKeyId,
                 inPassPhrase);
@@ -489,11 +490,9 @@ public class Main {
         // └─────────────────────────────────────┘
 
         // ----------------------------------------------------------------------------------
-        // Write the Signature Packets (tag=2).
+        // Write the new Signature Packets (tag=2).
         // ----------------------------------------------------------------------------------
 
-        // Write the newly generated Signature Packet
-        newPackets.getSignerGenerator().update(document);
         newPackets.getSignerGenerator().generate().encode(basicOut);
 
         // Result:

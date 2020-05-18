@@ -29,11 +29,27 @@ or
 > * `data/public-keyring.pgp`
 > * `data/secret-keyring.pgp`
 
-The program generates 4 files:
+The program generates 6 files:
 * `data/signature-master.pgp`
 * `data/signature-subkey.pgp`
+* `data/signature-subkey-bis.pgp`
 * `data/detached-signature-master.pgp`
 * `data/detached-signature-subkey.pgp`
+* `data/resig-signature-master.pgp`
+
+> `data/signature-subkey.pgp` and `data/signature-subkey-bis.pgp` are identical.
+
+The files `data/signature-master.pgp` and `data/signature-subkey.pgp` contain 1 [One Pass Signature Packet (tag=4)](https://tools.ietf.org/html/rfc4880#section-5.4).
+
+![](../doc/images/pgp-sign-1-one-pass.svg)
+
+The files `data/detached-signature-master.pgp` and `data/detached-signature-subkey.pgp` contain 1 [Signature Packet (tag=2)](https://tools.ietf.org/html/rfc4880#section-11.4).
+
+![](../doc/images/pgp-sign-detached.svg)
+
+The file `data/resig-signature-master.pgp` contains 2 [One Pass Signature Packets (tag=4)](https://tools.ietf.org/html/rfc4880#section-5.4).
+
+![](../doc/images/pgp-sign-2-one-pass.svg)
 
 Sample output:
 
@@ -43,6 +59,7 @@ Sample output:
             - 1CAC39B3C005457C (sign ? no, master ? no)
     Sign <Message to sign> using the master key => "./data/signature-master.pgp".
     Sign <Message to sign> using a sub key [DF4C6FED0763B6A9] => "./data/signature-subkey.pgp".
+    Sign <Message to sign> using a sub key [DF4C6FED0763B6A9] => "./data/signature-subkey-bis.pgp".
     Detach sign <./data/document-to-sign.txt> using the master key => "./data/detached-signature-master.pgp".
     Detach sign <./data/document-to-sign.txt> using the sub key [DF4C6FED0763B6A9] => "./data/detached-signature-subkey.pgp".
     Re-sign <./data/document-to-sign.txt> using the sub key [F52712127A58D490] => "./data/resig-signature-master.pgp".
