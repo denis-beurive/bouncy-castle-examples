@@ -311,7 +311,6 @@ public class Main {
             spGen.setSignerUserID(false, userId);
             signerGenerator.setHashedSubpackets(spGen.generate());
         }
-        signerGenerator.update(inDocumentToSign.readAllBytes());
 
         // ----------------------------------------------------------------------------------
         // Create the One Pass Signature Packet.
@@ -494,6 +493,7 @@ public class Main {
         // ----------------------------------------------------------------------------------
 
         // Write the newly generated Signature Packet
+        newPackets.getSignerGenerator().update(document);
         newPackets.getSignerGenerator().generate().encode(basicOut);
 
         // Result:
