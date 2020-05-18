@@ -116,3 +116,7 @@ For the detached signature:
 For the double signature:
 
     gpg --verify data/resig-signature-master.pgp
+
+# Documents
+
+* [Is there a size restriction on signatures in Java (java.security)?](https://stackoverflow.com/questions/2678138/is-there-a-size-restriction-on-signatures-in-java-java-security)
