@@ -62,7 +62,7 @@ Then, build all the example applications:
 
 | Action               | Example                                        | Notes                                                                              |
 |----------------------|------------------------------------------------|------------------------------------------------------------------------------------|
-| Key generation       | [app-pgp-keygen/](app-pgp-keygen)              | see note about key/keyring                                                         |
+| Key generation       | [app-pgp-keygen/](app-pgp-keygen)              | Create and manipulate keyrings                                                     |
 | Streams              | [app-streams](app-streams)                     | Armored Input/Output streams, Basic PGP Input/Output streams, JcaPGPObjectFactory  |
 | Signing              | [app-pgp-sign/](app-pgp-sign)                  | Create and verify signatures                                                       |
 | Certification        | [app-pgp-certification](app-pgp-certification) | Certify key                                                                        |
