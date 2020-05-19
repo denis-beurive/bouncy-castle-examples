@@ -350,7 +350,6 @@ public class Main {
      * @param inSigningPrivateKey The private key used to sign.
      * @param inPassPhrase The passphrase used to protect the newly created private key.
      * @throws PGPException
-     * @throws IOException
      */
 
     static private PGPSecretKey signKey(PGPSecretKey inSecretKey,
