@@ -41,22 +41,22 @@ Then, build all the example applications:
 
 ## Block ciphers
 
-| Algorithm | Cypher mode | Example                       |
-|-----------|-------------|-------------------------------|
-| DES       | CBC         | [app-cbc-des/](app-cbc-des)   |
-| DES       | CFB         | [app-cfb-des/](app-cfb-des)   |
-| DES       | OFB         | [app-ofb-des/](app-ofb-des)   |
-| AES       | CBC         | [app-cbc-aes/](app-cbc-aes)   |
-| 3DES      | CBC         | [app-cbc-3des/](app-cbc-3des) |
+| Algorithm | Cypher mode | Example                      |
+|-----------|-------------|------------------------------|
+| DES       | CBC         | [app-cbc-des](app-cbc-des)   |
+| DES       | CFB         | [app-cfb-des](app-cfb-des)   |
+| DES       | OFB         | [app-ofb-des](app-ofb-des)   |
+| AES       | CBC         | [app-cbc-aes](app-cbc-aes)   |
+| 3DES      | CBC         | [app-cbc-3des](app-cbc-3des) |
 
 ## Hash algorithms
 
-| Algorithm | Example                       |
-|-----------|-------------------------------|
-| SHA256    | [app-sha256/](app-sha256)     |
-| SHA512    | [app-sha512/](app-sha512)     |
-| MD5       | [app-md5/](app-md5)           |
-| Tiger     | [app-tiger/](app-tiger)       |
+| Algorithm | Example                      |
+|-----------|------------------------------|
+| SHA256    | [app-sha256](app-sha256)     |
+| SHA512    | [app-sha512](app-sha512)     |
+| MD5       | [app-md5](app-md5)           |
+| Tiger     | [app-tiger](app-tiger)       |
 
 ## PGP
 
