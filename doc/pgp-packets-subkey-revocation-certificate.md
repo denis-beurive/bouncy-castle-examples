@@ -1,4 +1,4 @@
-# Anatomy of a key revocation certificate
+# Anatomy of a subkey revocation certificate
 
 Let's see what, precisely, is a subkey revocation certificate.
 

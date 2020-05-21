@@ -1,4 +1,4 @@
-# Anatomy of a key revocation certificate
+# Anatomy of a master key revocation certificate
 
 Let's see what, precisely, is a key revocation certificate.
 
