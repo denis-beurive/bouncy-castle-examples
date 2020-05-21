@@ -76,17 +76,20 @@ On this repository:
 * [PGP packet general anatomy](doc/pgp-packet.md)
 * [Anatomy of a secret key keyring](doc/pgp-packets-secret-keyring.md)
 * [Anatomy of a signature](doc/pgp-packets-signature.md)
+* [Anatomy of a key revocation certificate](doc/pgp-packets-revocation.md)
 * [Cross-certification](doc/cross-certify.md)
 * [GPG commands](doc/gpg.md)
 
 On the WEB
 
 * [What exactly is a subkey?](https://security.stackexchange.com/questions/76940/what-exactly-is-a-subkey)
+* [How are primary key binding signatures (0x19) handled by gpg?](https://lists.gnupg.org/pipermail/gnupg-users/2014-May/049794.html)
 * [OpenPGP Under The Hood: literal data](https://under-the-hood.sequoia-pgp.org/literal-data/)
 * [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html)
 * [Detached signature](https://subversivebytes.wordpress.com/2013/12/10/pgp-cryptography-with-the-legion-of-the-bouncy-castle-part-5/)
 * [Why does a secret key have a <ultimate> uid ?](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto)
 * [Transitioning to a new GPG keypair](https://www.alessandromenti.it/blog/2017/01/transitioning-new-gpg-keypair.html)
+* [gen-revoke: extending revocation certificates to subkeys](https://blogs.gentoo.org/mgorny/2019/02/20/gen-revoke-extending-revocation-certificates-to-subkeys/)
 * [Bouncy Castle FAQ](http://www.bouncycastle.org/wiki/display/JA1/PGP+Questions)
 
 # Examples from the Bouncy Castle repository

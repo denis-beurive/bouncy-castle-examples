@@ -8,7 +8,20 @@ But the value (33) is not defined by [RFC 4880](https://tools.ietf.org/html/rfc4
 In fact, sub-packet 33 is a GPG extension (see [this post](https://lists.gnupg.org/pipermail/gnupg-users/2018-January/059881.html)).
 Therefore, do not expect to cross-certify the sub-keys using Bouncy Castle yet.
 
+See [How are primary key binding signatures (0x19) handled by gpg?](https://lists.gnupg.org/pipermail/gnupg-users/2014-May/049796.html)
+
+> When verifying a signature from a subkey without a 0x19 binding signature (aka "backsig"), you should get an error:
+>
+>  _WARNING: signing subkey XXXXXX is not cross-certified
+>  please see [http://www.gnupg.org/faq/subkey-cross-certify.html](http://www.gnupg.org/faq/subkey-cross-certify.html) for more information_
+> 
+> and the signature verification will fail.
+>
+> If you own the key in question, you can add a backsig to it via "gpg --edit-key 0549B8A5640444E6" and then "cross-certify".
+
 ## What does GPG do to cross-certify a sub-key ?
+
+To find out, let's follow this procedure:
 
 * Generate a secret and a public key-ring (`data/public-keyring.pgp` and `data/secret-keyring.pgp`).
 * Dump the content of the public key-ring into a file: `gpg --list-packets --verbose data/public-keyring.pgp > data/public-keyring-list.pgp`
@@ -174,3 +187,5 @@ From [RFC4880 section-15](https://tools.ietf.org/html/rfc4880#section-15):
 > until relatively recently.  Consequently, there may be keys in
 > the wild that do not have these back signatures.  Implementing
 > software may handle these keys as it sees fit.
+
+

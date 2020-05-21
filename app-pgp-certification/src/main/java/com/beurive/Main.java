@@ -17,20 +17,50 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBu
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 
 
-
-
 public class Main {
 
     /**
-     * Certify a public key.
-     * @param inPublicKey The public key to certify.
+     * Add a Subkey Revocation Signature (type=0x28) - to a signing public subkey.
+     *
+     * See https://tools.ietf.org/html/rfc4880#section-5.2.1
+     *
+     * The added signature will have the following sub-packets:
+     * * Signature Expiration Time (type=3)
+     * * Exportable Certification (type=4)
+     * * Revocable (type=7)
+     *
+     * See https://tools.ietf.org/html/rfc4880#section-5.2.3.1
+     *
+     * Before (example):
+     *
+     * ┌────────────────────────────────────────────────────┐
+     * │ Public Subkey Packet (tag=14)                      │
+     * └────────────────────────────────────────────────────┘
+     * ┌────────────────────────────────────────────────────┐
+     * │ Subkey Binding Signature Packet (tag=2, type=0x18) │
+     * └────────────────────────────────────────────────────┘
+     *
+     * After:
+     *
+     * ┌───────────────────────────────────────────────────────┐
+     * │ Public Subkey Packet (tag=14)                         │
+     * └───────────────────────────────────────────────────────┘
+     * ┌───────────────────────────────────────────────────────┐
+     * │ Subkey Binding Signature Packet (tag=2, type=0x18)    │
+     * └───────────────────────────────────────────────────────┘
+     * ┌───────────────────────────────────────────────────────┐
+     * │ Subkey Revocation Signature Packet (tag=2, type=0x28) │
+     * └───────────────────────────────────────────────────────┘
+     *
+     * @param inPublicSubkey The public (sub) key to certify.
      * @param inSigningPrivateKey The private key used to certify the public key.
+     * Please note that this private key is the private key associated to the secret
      * @return The certified public key.
      * @throws PGPException
      */
 
-    static private PGPPublicKey certifyPublicKey(PGPPublicKey inPublicKey,
-                                                 PGPPrivateKey inSigningPrivateKey) throws PGPException {
+    static private PGPPublicKey AddSubkeyRevocationSignature(PGPPublicKey inPublicSubkey,
+                                                             PGPPrivateKey inSigningPrivateKey) throws PGPException {
 
         // Define subpackets.
         PGPSignatureSubpacketGenerator subpacketGenerator = new PGPSignatureSubpacketGenerator();
@@ -41,12 +71,12 @@ public class Main {
         // Create the signature generator.
         PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
                 new JcaPGPContentSignerBuilder(
-                        inPublicKey.getAlgorithm(),
+                        inPublicSubkey.getAlgorithm(),
                         HashAlgorithmTags.SHA1));
-        signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, inSigningPrivateKey);
+        signatureGenerator.init(PGPSignature.SUBKEY_REVOCATION, inSigningPrivateKey);
         signatureGenerator.setHashedSubpackets(subpacketGenerator.generate());
 
-        return PGPPublicKey.addCertification(inPublicKey, signatureGenerator.generate());
+        return PGPPublicKey.addCertification(inPublicSubkey, signatureGenerator.generate());
     }
 
 
@@ -64,7 +94,7 @@ public class Main {
                                                  char[] inPassPhrase) throws PGPException {
 
         PGPPublicKey pubKey = inSecretKey.getPublicKey();
-        PGPPublicKey certifiedPubKey = certifyPublicKey(pubKey, inSigningPrivateKey);
+        PGPPublicKey certifiedPubKey = AddSubkeyRevocationSignature(pubKey, inSigningPrivateKey);
 
         PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
         PGPDigestCalculator sha256Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA256);
@@ -115,7 +145,7 @@ public class Main {
                     publicSubKey.getKeyID(),
                     secretMasterKey.getKeyID(),
                     certifiedPublicKeyPath);
-            PGPPublicKey certifiedPubKey = certifyPublicKey(publicSubKey, privateMasterKey);
+            PGPPublicKey certifiedPubKey = AddSubkeyRevocationSignature(publicSubKey, privateMasterKey);
             Key.dumpPublicKey(certifiedPubKey, certifiedPublicKeyPath);
 
             // Certify the secret subkey.
