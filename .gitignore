@@ -3,6 +3,7 @@ build/
 libs/
 .idea/
 lib/
+stached/
 setenv.bat
 setenv.sh
 gradlew

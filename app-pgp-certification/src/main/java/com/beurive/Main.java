@@ -3,18 +3,19 @@
 package com.beurive;
 
 import java.security.Security;
+import java.util.Date;
+import java.util.Iterator;
+
 import org.beurive.pgp.Key;
 import org.beurive.pgp.Keyring;
+import org.beurive.pgp.Stream;
 import org.bouncycastle.bcpg.*;
+import org.bouncycastle.bcpg.sig.RevocationReasonTags;
 import org.bouncycastle.openpgp.*;
-import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
-import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 
 
 public class Main {
@@ -22,14 +23,19 @@ public class Main {
     /**
      * Add a Subkey Revocation Signature (type=0x28) - to a signing public subkey.
      *
-     * See https://tools.ietf.org/html/rfc4880#section-5.2.1
+     * Please note that the generated document is not a revocation certificate
+     * for the subkey. It is only part of it. The revocation certificate for
+     * the subkey includes all other information contained within the keyring that
+     * holds the subkey.
      *
      * The added signature will have the following sub-packets:
-     * * Signature Expiration Time (type=3)
-     * * Exportable Certification (type=4)
-     * * Revocable (type=7)
+     * * Reason for Revocation Sub Packet
+     *   See https://tools.ietf.org/html/rfc4880#section-5.2.3.23
+     * * Signature Creation Time Sub Packet
+     *   See https://tools.ietf.org/html/rfc4880#section-5.2.3.4
      *
-     * See https://tools.ietf.org/html/rfc4880#section-5.2.3.1
+     * See https://tools.ietf.org/html/rfc4880#section-5.2.1
+     *     https://tools.ietf.org/html/rfc4880#section-5.2.3.1
      *
      * Before (example):
      *
@@ -50,23 +56,25 @@ public class Main {
      * └───────────────────────────────────────────────────────┘
      * ┌───────────────────────────────────────────────────────┐
      * │ Subkey Revocation Signature Packet (tag=2, type=0x28) │
+     * │ + Reason for Revocation                               │
+     * │ + Signature Creation Time                             │
      * └───────────────────────────────────────────────────────┘
      *
      * @param inPublicSubkey The public (sub) key to certify.
      * @param inSigningPrivateKey The private key used to certify the public key.
      * Please note that this private key is the private key associated to the secret
-     * @return The certified public key.
+     * @return The modified public key. The returned public key contains a Subkey
+     * Revocation Signature.
      * @throws PGPException
      */
 
-    static private PGPPublicKey AddSubkeyRevocationSignature(PGPPublicKey inPublicSubkey,
+    static private PGPPublicKey addSubkeyRevocationSignature(PGPPublicKey inPublicSubkey,
                                                              PGPPrivateKey inSigningPrivateKey) throws PGPException {
 
         // Define subpackets.
         PGPSignatureSubpacketGenerator subpacketGenerator = new PGPSignatureSubpacketGenerator();
-        subpacketGenerator.setKeyExpirationTime(false, 1000000);
-        subpacketGenerator.setExportable(false, true);
-        subpacketGenerator.setRevocable(false, true);
+        subpacketGenerator.setRevocationReason(false, RevocationReasonTags.KEY_COMPROMISED, "The computer holding the secret key is compromised!");
+        subpacketGenerator.setSignatureCreationTime(false, new Date());
 
         // Create the signature generator.
         PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
@@ -79,30 +87,118 @@ public class Main {
         return PGPPublicKey.addCertification(inPublicSubkey, signatureGenerator.generate());
     }
 
+    /**
+     * Create a revocation certificate for a given subkey.
+     *
+     * This method binds a Subkey Revocation Signature Packet (tag=2, type=0x28)
+     * to the subkey being revoked.
+     *
+     * See https://tools.ietf.org/html/rfc4880#section-5.2.1
+     *
+     * Before, we have a keyring that contains the subkey to revoke.
+     * For example:
+     *
+     * ┌────────────────────────────────────────────────────┐
+     * │ Public-Key Packet (tag=4)                          │
+     * └────────────────────────────────────────────────────┘
+     * ...
+     * ┌────────────────────────────────────────────────────┐
+     * │ Public Subkey Packet (tag=14)                      │
+     * └────────────────────────────────────────────────────┘
+     * ┌────────────────────────────────────────────────────┐
+     * │ Subkey Binding Signature Packet (tag=2, type=0x18) │
+     * └────────────────────────────────────────────────────┘
+     *
+     * Within the above keyring, we bind a Subkey Revocation
+     * Signature Packet (tag=2, type=0x28) to the subkey to
+     * revoke:
+     *
+     * ┌────────────────────────────────────────────────────┐
+     * │ Public-Key Packet (tag=4)                          │
+     * └────────────────────────────────────────────────────┘
+     * ...
+     * ┌────────────────────────────────────────────────────┐
+     * │ Public Subkey Packet (tag=14)                      │
+     * └────────────────────────────────────────────────────┘
+     * ┌────────────────────────────────────────────────────┐
+     * │ Subkey Binding Signature Packet (tag=2, type=0x18) │
+     * └────────────────────────────────────────────────────┘
+     * ┌───────────────────────────────────────────────────────┐
+     * │ Subkey Revocation Signature Packet (tag=2, type=0x28) │
+     * │ + Reason for Revocation                               │
+     * │ + Signature Creation Time                             │
+     * └───────────────────────────────────────────────────────┘
+     *
+     * @param inPublicKeyRing The public keyring that contains the subkey to revoke.
+     * @param inSubKeyId The ID of the subkey to revoke.
+     * @param inSigningPrivateKey The private key used to generate the Subkey Revocation
+     * Signature Packet (tag=2, type=0x28) binded to the subkey.
+     * @return The method returns the new public keyring that represents the revocation
+     * certificate.
+     * @throws Exception
+     */
+
+    private static PGPPublicKeyRing createRevocationCertificateForSubkey(PGPPublicKeyRing inPublicKeyRing,
+                                                                         long inSubKeyId,
+                                                                         PGPPrivateKey inSigningPrivateKey) throws Exception {
+
+        // Add a Subkey Revocation Signature Packet (tag=2, type=0x28) to the subkey.
+        PGPPublicKey subkey = inPublicKeyRing.getPublicKey(inSubKeyId);
+        if (null == subkey) {
+            throw new Exception(String.format("Unknown subkey which ID is %H!", inSubKeyId));
+        }
+        PGPPublicKey signedSubkey = addSubkeyRevocationSignature(subkey, inSigningPrivateKey);
+
+        // Generate the certificate.
+        // Note: if the given subkey (identified by its subkey) already exists in the
+        // keyring, then it is replaced by its new version.
+        return PGPPublicKeyRing.insertPublicKey(inPublicKeyRing, signedSubkey);
+    }
 
     /**
-     * Certify a secret key.
-     * @param inSecretKey The secret key to sign.
-     * @param inSigningPrivateKey The private key used to sign.
-     * @param inPassPhrase The passphrase used to protect the newly created private key.
-     * @return The certified secret key.
+     * Create a revocation certificate for a given master key.
+     *
+     * The generated document is a Key revocation signature Packet (tag=2, type=0x20).
+     *
+     * The returned signature contains the following sub packets:
+     * * Reason for Revocation Sub Packet
+     *   See https://tools.ietf.org/html/rfc4880#section-5.2.3.23
+     * * Signature Creation Time Sub Packet
+     *   See https://tools.ietf.org/html/rfc4880#section-5.2.3.4
+     *
+     * See https://tools.ietf.org/html/rfc4880#section-5.2.1
+     *
+     * ┌─────────────────────────────────────────────────────┐
+     * │ Key Revocation Signature Packet  (tag=2, type=0x20) │
+     * │ + Reason for Revocation                             │
+     * │ + Signature Creation Time                           │
+     * └─────────────────────────────────────────────────────┘
+     *
+     * @param inSecretKeyring The secret keyring that contains the master key to revoke.
+     * @param inPassPhrase The passphrase that protects the master key.
+     * @return The method returns the revocation certificate.
      * @throws PGPException
      */
 
-    static private PGPSecretKey certifySecretKey(PGPSecretKey inSecretKey,
-                                                 PGPPrivateKey inSigningPrivateKey,
-                                                 char[] inPassPhrase) throws PGPException {
+    static private PGPSignature createRevocationCertificateForMasterKey(PGPSecretKeyRing inSecretKeyring,
+                                                                        String inPassPhrase) throws PGPException {
+        PGPPublicKey publicMasterKey = inSecretKeyring.getPublicKey();
+        PGPSecretKey secretMasterKey = inSecretKeyring.getSecretKey();
+        PGPPrivateKey privateMasterKey = secretMasterKey.extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(inPassPhrase.toCharArray()));
 
-        PGPPublicKey pubKey = inSecretKey.getPublicKey();
-        PGPPublicKey certifiedPubKey = AddSubkeyRevocationSignature(pubKey, inSigningPrivateKey);
+        // Define subpackets.
+        PGPSignatureSubpacketGenerator subpacketGenerator = new PGPSignatureSubpacketGenerator();
+        subpacketGenerator.setRevocationReason(false, RevocationReasonTags.KEY_COMPROMISED, "The computer holding the secret key is compromised!");
+        subpacketGenerator.setSignatureCreationTime(false, new Date());
 
-        PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
-        PGPDigestCalculator sha256Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA256);
-        PBESecretKeyEncryptor encryptor = new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha256Calc).setProvider("BC").build(inPassPhrase);
-
-        // Other versions of the constructor "PGPSecretKey" exist.
-        // These other versions allow the definition of subpackets.
-        return new PGPSecretKey(inSigningPrivateKey, certifiedPubKey, sha1Calc, false, encryptor);
+        // Create the signature generator.
+        PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
+                new JcaPGPContentSignerBuilder(
+                        publicMasterKey.getAlgorithm(),
+                        HashAlgorithmTags.SHA1));
+        signatureGenerator.init(PGPSignature.KEY_REVOCATION, privateMasterKey);
+        signatureGenerator.setHashedSubpackets(subpacketGenerator.generate());
+        return signatureGenerator.generateCertification(publicMasterKey);
     }
 
 
@@ -112,8 +208,11 @@ public class Main {
         String passPhrase = "password";
         String secretKeyRingPath = "data/secret-keyring.pgp";
         String publicKeyRingPath = "data/public-keyring.pgp";
-        String certifiedSecretKeyPath = "data/certified-secret-key.pgp";
-        String certifiedPublicKeyPath = "data/certified-public-key.pgp";
+        String subkeyWithRevocationSignaturePath = "data/subkey-with-revocation-signature.pgp";
+        String subkeyRevocationCertificatePath = "data/subkey-revocation-certificate.pgp";
+        String maskerKeyRevocationCertificatePath = "data/master-key-revocation-certificate.pgp";
+        ArmoredOutputStream armoredOutputStream;
+        BCPGOutputStream basicOut;
 
         try {
             // Load the secret keyring.
@@ -134,28 +233,51 @@ public class Main {
             PGPSecretKey[] secretSigningKeys = Keyring.getSecretKeys(secretKeyRing, true);
             PGPSecretKey secretMasterKey = secretSigningKeys[0];
             PGPPrivateKey privateMasterKey = secretMasterKey.extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(passPhrase.toCharArray()));
-            PGPSecretKey secretSubKey = secretSigningKeys[1];
 
             // Get the required public cryptographic documents.
             PGPPublicKey[] publicKeys = Keyring.getPublicKeys(publicReyRing);
             PGPPublicKey publicSubKey = publicKeys[1];
 
-            // Certify the public subkey.
-            System.out.printf("Certify subkey %X with master key %X => %s\n",
+            // ---------------------------------------------------------------------------
+            // Add a Subkey Revocation Signature Packet to a subkey.
+            // ---------------------------------------------------------------------------
+
+            System.out.printf("Add a Subkey Revocation Signature Packet to the subkey %X (which master key is %X) => %s\n",
                     publicSubKey.getKeyID(),
                     secretMasterKey.getKeyID(),
-                    certifiedPublicKeyPath);
-            PGPPublicKey certifiedPubKey = AddSubkeyRevocationSignature(publicSubKey, privateMasterKey);
-            Key.dumpPublicKey(certifiedPubKey, certifiedPublicKeyPath);
+                    subkeyWithRevocationSignaturePath);
+            PGPPublicKey certifiedPubKey = addSubkeyRevocationSignature(publicSubKey, privateMasterKey);
+            Key.dumpPublicKey(certifiedPubKey, subkeyWithRevocationSignaturePath);
 
-            // Certify the secret subkey.
-            System.out.printf("Certify subkey %X with master key %X => %s\n",
-                    secretSubKey.getKeyID(),
+            // ---------------------------------------------------------------------------
+            // Create a subkey revocation certificate.
+            // ---------------------------------------------------------------------------
+
+            System.out.printf("Create the revocation certificate for the subkey key %X => %s\n",
+                    publicSubKey.getKeyID(),
+                    subkeyRevocationCertificatePath);
+            PGPPublicKeyRing skRevCertificate = createRevocationCertificateForSubkey(publicReyRing, publicSubKey.getKeyID(), privateMasterKey);
+
+            // Write the certificate into a file.
+            armoredOutputStream = Stream.getBufferedArmoredOutputStreamToFile(subkeyRevocationCertificatePath);
+            basicOut = new BCPGOutputStream(armoredOutputStream);
+            skRevCertificate.encode(basicOut);
+            armoredOutputStream.close();
+
+            // ---------------------------------------------------------------------------
+            // Create the master key revocation certificate.
+            // ---------------------------------------------------------------------------
+
+            System.out.printf("Create the revocation certificate for the master key %X => %s\n",
                     secretMasterKey.getKeyID(),
-                    certifiedSecretKeyPath);
-            PGPSecretKey certifiedKey = certifySecretKey(secretSubKey, privateMasterKey, passPhrase.toCharArray());
-            Key.dumpSecretKey(certifiedKey, certifiedSecretKeyPath);
+                    maskerKeyRevocationCertificatePath);
+            PGPSignature mkRevCertificate = createRevocationCertificateForMasterKey(secretKeyRing, passPhrase);
 
+            // Write the certificate into a file.
+            armoredOutputStream = Stream.getBufferedArmoredOutputStreamToFile(maskerKeyRevocationCertificatePath);
+            basicOut = new BCPGOutputStream(armoredOutputStream);
+            mkRevCertificate.encode(basicOut);
+            armoredOutputStream.close();
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);

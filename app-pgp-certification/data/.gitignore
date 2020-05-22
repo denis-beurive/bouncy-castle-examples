@@ -1,1 +1,4 @@
 certified-*
+master-key-revocation-certificate.pgp
+subkey-revocation-certificate.pgp
+subkey-with-revocation-signature.pgp

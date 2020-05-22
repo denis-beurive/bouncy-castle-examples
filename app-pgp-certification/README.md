@@ -1,6 +1,6 @@
 # Description
 
-Illustrates the signature management.
+Illustrates the creation of revocation certificates.
 
 # Dependencies
 
