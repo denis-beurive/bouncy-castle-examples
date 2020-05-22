@@ -1,4 +1,4 @@
-// This file shows how to certify a key (using a signing secret key).
+// This file shows how generate revocation certificates.
 
 package com.beurive;
 
