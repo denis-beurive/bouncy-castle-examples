@@ -97,3 +97,12 @@ We note that a [Subkey Revocation Signature Packet ](https://tools.ietf.org/html
         subpkt 16 len 8 (issuer key ID D6B21BFAAD1A9DE0)
         data: [2048 bits]
 
+# Illustration
+
+The original keyring:
+
+![](images/pgp-packets-public-keyring-full.svg)
+
+The subkey revocation "certificate":
+
+![](images/pgp-packets-subkey-revocation-certificate.svg)

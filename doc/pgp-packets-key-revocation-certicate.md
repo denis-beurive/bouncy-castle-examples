@@ -147,3 +147,14 @@ Conclusion: a revocation certification is made of a single [Key Revocation Signa
 > Please note that you can generate a revocation certificate directly:
 >
 > `gpg -o revocation-cert.pgp --gen-revoke ADA313C0C49DDD87B075E9802F3DC8F2A29E5F10`
+
+# Illustration
+
+The original keyring:
+
+![](images/pgp-packets-public-keyring-full.svg)
+
+The revocation certificate:
+
+![](images/pgp-packets-key-revocation-certificate.svg)
+
