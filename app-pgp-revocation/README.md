@@ -2,6 +2,8 @@
 
 Illustrates the creation of revocation certificates.
 
+See [Master/Sub key revocation](../doc/pgp-packets-revocation.md).
+
 # Dependencies
 
 * [Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs » 1.65](https://mvnrepository.com/artifact/org.bouncycastle/bcpkix-jdk15to18/1.65)
