@@ -55,7 +55,7 @@ With (see [this link](https://unix.stackexchange.com/questions/31996/how-are-the
 
     $ gpg --edit-key ${KEYID}
     -> "cross-certify" [ENTER]
-    -> "quit"
+    -> "quit" [ENTER]
     -> "y" [ENTER]
 
 ## Export a key
@@ -102,3 +102,34 @@ Output example:
     :user ID packet: "owner@email.com"
 
 ![](images/pgp-packet-gpg-dump.svg)
+
+## Create a (master) key revocation certificate
+
+    gpg -o revocation-cert.pgp --gen-revoke ${KEYID}
+    
+## Create a subkey key revocation certificate
+
+Be aware that a subkey revocation certificate is, in reality, a keyring that contains additional data.
+The additional data is a special type of signature (tag=2) which type is _Subkey Revocation Signature_ (type=0x28).
+
+* Let's assume that `D09BA342BB8D5F37` is the ID of the "keyring master key" (also called "master key" or "key"...).
+* Let's assume that `FD46A5EFC8368BBF` is the ID of the "subkey" to revoke.
+
+Edit the key (or "keyring", or "master key"):
+
+    gpg --edit-key D09BA342BB8D5F37
+    
+Then **SELECT THE (SUBKEY) to revoke**:
+
+    key FD46A5EFC8368BBF [ENTER]
+
+> The command above is **VERY IMPORTANT**. If you don't select the subkey, then you will revoke the
+> "master key" (or "keyring", or "key") => all the "keys", including the subkeys.
+
+    "revkey" [ENTER]
+    ...
+    [save] [ENTER]
+    
+At the end, you should export the (public) keyring (which _IS_ the revocation certificate):
+
+    gpg --armor --output revocation-certificate-for-subkey-FD46A5EFC8368BBF.pgp --export D09BA342BB8D5F37
