@@ -23,7 +23,7 @@ or
 
 > Make sure to run `gradle setup` (at the project root level) first.
 
-# Notes
+# General notes
 
 Sub-keys of type DSA cannot be "[cross-certified](../doc/cross-certify.md)" using GPG 2.2.19.
 
@@ -36,6 +36,37 @@ Recent versions of PGP and GnuPG can protect the integrity of secret keys with a
 hash instead of the older 2 byte (16 bit) checksum used by previous versions of PGP and GnuPG.
 This new SHA1 secret key hash is specifed in RFC2440; the simple 16 bit checksum used by most
 previous versions of PGP and GPG is now deprecated.  
+
+# Note about the creation of subkeys
+
+A keyring is made of one master key and, optionally, one or more subkeys. 
+
+Keyrings are created using a keyring generator (`org.bouncycastle.openpgp.PGPKeyRingGenerator`).
+
+The question is: can you create a subkey without the use of a keyring generator ?
+
+The technique implemented in this example uses a keyring generator to generate a subkey.
+
+Let's say that:
+* we want to generate a subkey for the keyring "KR".
+* the master key of the "KR" keyring is "MK".
+
+![](doc/kr-before.svg)
+
+First, we initialize a keyring generator (let's call it "KRG") with 2 key pairs:
+* the first key pair is built using "MK".
+* the second key pair is generated (using a key pai generator).
+
+Then, we generate a temporary keyring (let's call it "TKR") using the previously created keyring generator ("KRG").
+"TKR" contains:
+* the master key "MK".
+* the new subkey, designed to be added to "KR". Let's call this subkey "SBK".
+
+![](doc/kr-middle.svg)
+
+Finally, we extract "SBK" from "TKR" and we add it to "KR".
+
+![](doc/kr-after.svg)
 
 # Documents
 
