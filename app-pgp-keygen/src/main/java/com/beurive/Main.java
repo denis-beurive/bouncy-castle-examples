@@ -12,7 +12,7 @@ import java.security.Security;
 import java.util.Iterator;
 import java.util.List;
 
-import org.bouncycastle.bcpg.BCPGKey;
+import org.beurive.pgp.Key;
 import org.bouncycastle.crypto.generators.DSAKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DSAParametersGenerator;
 import org.bouncycastle.crypto.generators.ElGamalKeyPairGenerator;
@@ -25,42 +25,16 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
-import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
-import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
-import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
-import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 
 public class Main {
-
-    /**
-     * Create a ArmoredOutputStream to a file.
-     * @param inPath Path to the file.
-     * @return a new ArmoredOutputStream.
-     * @throws IOException
-     */
-
-    private static ArmoredOutputStream getArmoredOutputStream(String inPath) throws IOException {
-        return new ArmoredOutputStream(new BufferedOutputStream(new FileOutputStream(new File(inPath))));
-    }
-
-    /**
-     * Create a BCPGOutputStream to a file.
-     * @param inPath Path to the file.
-     * @return a new BCPGOutputStream.
-     * @throws IOException
-     */
-
-    private static BCPGOutputStream getBCPGOutputStream(String inPath) throws IOException {
-        return new BCPGOutputStream(new BufferedOutputStream(new FileOutputStream(new File(inPath))));
-    }
 
     /**
      * Dump a given keyring into a file identified by its path.
@@ -73,142 +47,13 @@ public class Main {
      */
 
     private static void dumpKeyRing(PGPKeyRing inKeyRing, String inPath, boolean asArmored) throws IOException {
-        OutputStream stream;
+        OutputStream stream = new FileOutputStream(new File(inPath));
         if (asArmored) {
-            stream = getArmoredOutputStream(inPath);
-        } else {
-            stream = new FileOutputStream(new File(inPath));
+            stream = new ArmoredOutputStream(stream);
         }
 
         inKeyRing.encode(stream);
         stream.close();
-    }
-
-    /**
-     * Extract the private key from a given secret key.
-     * @param pgpSecKey The secret key.
-     * @param passPhrase The private key pass phrase.
-     * @return The private key.
-     * @throws PGPException
-     */
-
-    private static PGPPrivateKey extractPrivateKey(PGPSecretKey pgpSecKey, char[] passPhrase)
-            throws PGPException {
-        PGPPrivateKey privateKey = null;
-        BcPGPDigestCalculatorProvider calculatorProvider = new BcPGPDigestCalculatorProvider();
-        BcPBESecretKeyDecryptorBuilder secretKeyDecryptorBuilder = new BcPBESecretKeyDecryptorBuilder(calculatorProvider);
-        PBESecretKeyDecryptor pBESecretKeyDecryptor = secretKeyDecryptorBuilder.build(passPhrase);
-
-        try {
-            privateKey = pgpSecKey.extractPrivateKey(pBESecretKeyDecryptor);
-        } catch (PGPException e) {
-            throw new PGPException(String.format("Invalid private key pass phrase \"%s\": %s",
-                    String.valueOf(passPhrase),
-                    e.toString()));
-        }
-
-        return privateKey;
-    }
-
-    /**
-     * Dump a given public key into a file identified by its path.
-     * @param inPublicKey The public key to dump.
-     * @param inPath Path to the output file.
-     * @throws IOException
-     */
-
-    private static void dumpPublicKey(PGPPublicKey inPublicKey, String inPath) throws IOException {
-        ArmoredOutputStream outputStream = getArmoredOutputStream(inPath);
-        inPublicKey.encode(outputStream);
-        outputStream.close();
-    }
-
-    /**
-     * Dump a given secret key into 2 files:
-     * - one file that represents the PGP secret key.
-     * - one file that contains the mathematical components of the key.
-     *   The content of this file depends on the type of key (RSA, DSA or El Gamal).
-     * @param inSecreteKey The secret key to dump.
-     * @param inPathPrefix Path prefix used to create the output file paths.
-     * @param inPassPhrase The passphrase for the private key.
-     * @throws IOException
-     * @throws PGPException
-     */
-
-    private static void dumpSecretKey(PGPSecretKey inSecreteKey,
-                                      String inPathPrefix,
-                                      char[] inPassPhrase) throws IOException, PGPException {
-        ArmoredOutputStream outputSecretKeyStream = getArmoredOutputStream(inPathPrefix + ".pgp");
-        inSecreteKey.encode(outputSecretKeyStream);
-        outputSecretKeyStream.close();
-
-        PGPPrivateKey privateKey = extractPrivateKey(inSecreteKey, inPassPhrase);
-        BCPGKey packet = privateKey.getPrivateKeyDataPacket();
-
-        if (packet instanceof org.bouncycastle.bcpg.RSASecretBCPGKey) {
-            // @see org.bouncycastle.bcpg.RSASecretBCPGKey.encode
-            // This will dump 4 MPIs.
-            BCPGOutputStream outputStream = getBCPGOutputStream(inPathPrefix + "-private-rsa.data");
-            org.bouncycastle.bcpg.RSASecretBCPGKey key = (org.bouncycastle.bcpg.RSASecretBCPGKey)packet;
-            key.encode(outputStream);
-            outputStream.close();
-        }
-
-        if (packet instanceof org.bouncycastle.bcpg.DSASecretBCPGKey) {
-            // @see org.bouncycastle.bcpg.DSASecretBCPGKey.encode
-            // This will dump 1 MPI.
-            BCPGOutputStream outputStream = getBCPGOutputStream(inPathPrefix + "-private-dsa.data");
-            org.bouncycastle.bcpg.DSASecretBCPGKey key = (org.bouncycastle.bcpg.DSASecretBCPGKey)packet;
-            key.encode(outputStream);
-            outputStream.close();
-        }
-
-        if (packet instanceof org.bouncycastle.bcpg.ElGamalSecretBCPGKey) {
-            // @see org.bouncycastle.bcpg.ElGamalSecretBCPGKey.encode
-            // This will dump 1 MPI.
-            BCPGOutputStream outputStream = getBCPGOutputStream(inPathPrefix + "-private-elgamal.data");
-            org.bouncycastle.bcpg.ElGamalSecretBCPGKey key = (org.bouncycastle.bcpg.ElGamalSecretBCPGKey)packet;
-            key.encode(outputStream);
-            outputStream.close();
-        }
-    }
-
-    /**
-     * Dump all (public) keys within a given public key-ring.
-     * @param inKeyRing The public keyring to dump.
-     * @param inPathPrefix The path prefix used to create the output files.
-     * @throws IOException
-     */
-
-    private static void dumpAllPublicKeys(PGPPublicKeyRing inKeyRing,
-                                          String inPathPrefix) throws IOException {
-        Iterator<PGPPublicKey> keyIterator = inKeyRing.iterator();
-        int id = 1;
-        while (true) {
-            if (! keyIterator.hasNext()) break;
-            dumpPublicKey(keyIterator.next(), inPathPrefix + id++ + ".pgp");
-        }
-    }
-
-    /**
-     * Dump all (secret) keys within a given secret key-ring.
-     * @param inKeyRing The secret keyring to dump.
-     * @param inPathPrefix The path prefix used to create the output file paths.
-     * @param inPassPhrase The passphrase for the private keys.
-     * @throws IOException
-     */
-
-    private static void dumpAllSecretKeys(PGPSecretKeyRing inKeyRing,
-                                          String inPathPrefix,
-                                          String inPassPhrase) throws IOException, PGPException {
-        Iterator<PGPSecretKey> keyIterator = inKeyRing.iterator();
-        char[] passPhrase = inPassPhrase.toCharArray();
-        int id = 1;
-        while (true) {
-            if (! keyIterator.hasNext()) break;
-            PGPSecretKey key = keyIterator.next();
-            dumpSecretKey(key, inPathPrefix + id++, passPhrase);
-        }
     }
 
     /**
@@ -295,10 +140,10 @@ public class Main {
         char[] passPhrase = inPassPhrase.toCharArray();
 
         // Define subpackets.
-        PGPSignatureSubpacketGenerator subpacketGenerator = new PGPSignatureSubpacketGenerator();
-        subpacketGenerator.setKeyExpirationTime(false, 1000000);
-        subpacketGenerator.setExportable(false, true);
-        subpacketGenerator.setRevocable(false, true);
+        PGPSignatureSubpacketGenerator subPacketGenerator = new PGPSignatureSubpacketGenerator();
+        subPacketGenerator.setKeyExpirationTime(false, 1000000);
+        subPacketGenerator.setExportable(false, true);
+        subPacketGenerator.setRevocable(false, true);
 
         // See RFC 4840: [9.4. Hash Algorithms]
         // https://tools.ietf.org/html/rfc4880#section-9.4
@@ -314,7 +159,7 @@ public class Main {
                 inPairs[0],
                 inIdentity,
                 sha1Calc,
-                subpacketGenerator.generate(),
+                subPacketGenerator.generate(),
                 null,
                 new JcaPGPContentSignerBuilder(inPairs[0].getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA256),
                 new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha256Calc).setProvider("BC").build(passPhrase)
@@ -345,108 +190,125 @@ public class Main {
     }
 
     /**
-     * Sign a key.
-     * @param inSecretKey The secret key to sign.
-     * @param inSigningPrivateKey The private key used to sign.
-     * @param inPassPhrase The passphrase used to protect the newly created private key.
+     * Add a Primary Key Binding Signature (tag=2, type=0x19) to a given public key.
+     * @param inPublicSubkey The public key.
+     * @param inSigningPrivateKey The private key used to generate the signature.
+     * This should be the private key associated to the master key.
+     * @return The method returns the signed public key.
      * @throws PGPException
      */
 
-    static private PGPSecretKey signKey(PGPSecretKey inSecretKey,
-                                        PGPPrivateKey inSigningPrivateKey,
-                                        char[] inPassPhrase) throws PGPException {
-
-        PGPPublicKey pubKey = inSecretKey.getPublicKey();
+    static public PGPPublicKey addPrimaryKeyBindingSignature(PGPPublicKey inPublicSubkey,
+                                                             PGPPrivateKey inSigningPrivateKey) throws PGPException {
 
         // Define subpackets.
         PGPSignatureSubpacketGenerator subpacketGenerator = new PGPSignatureSubpacketGenerator();
-        subpacketGenerator.setKeyExpirationTime(false, 1000000);
-        subpacketGenerator.setExportable(false, true);
-        subpacketGenerator.setRevocable(false, true);
+        subpacketGenerator.setSignatureCreationTime(false, new Date());
 
         // Create the signature generator.
         PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
                 new JcaPGPContentSignerBuilder(
-                        inSecretKey.getPublicKey().getAlgorithm(),
+                        inPublicSubkey.getAlgorithm(),
                         HashAlgorithmTags.SHA1));
         signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, inSigningPrivateKey);
         signatureGenerator.setHashedSubpackets(subpacketGenerator.generate());
 
-        PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
-        PGPDigestCalculator sha256Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA256);
-        PBESecretKeyEncryptor encryptor = new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha256Calc).setProvider("BC").build(inPassPhrase);
-
-        PGPPublicKey signedPublicKey = PGPPublicKey.addCertification(pubKey, signatureGenerator.generate());
-        // NOTE ID:
-        // Other versions of the constructor "PGPSecretKey" exist.
-        // These other versions allow the definition of subpackets.
-        PGPSecretKey signedSecretKey = new PGPSecretKey(inSigningPrivateKey, signedPublicKey, sha1Calc, false, encryptor);
-
-        return signedSecretKey;
+        return PGPPublicKey.addCertification(inPublicSubkey, signatureGenerator.generate());
     }
 
     /**
-     * Add a subkey to a given keyring.
-     * @param inSecretKeyRing The keyring into which the new key will be added.
-     * @param inKeyPairToAdd The pair of keys to add.
-     * @param inPassPhrase The passphrase for the secret keyring.
-     * @return A new keyring.
+     * Generate a secret key using the following data:
+     * * a public key.
+     * * the private key associated with the given public key.
+     * * the passphrase that protects the private key.
+     *
+     * Please note that a public key and its associated secret key
+     * are intrinsically linked. This method does not generate a
+     * (secret) key. It generates a (secret key) packet. A secret key
+     * should have been generated, along with the given public key,
+     * prior to the call to this method.
+     *
+     * This method is intended to be called after a public key packet
+     * is modified. For example, a signature has been applied to a
+     * public key packet (within a public key), and you want to generate
+     * a new secret key that includes the updated public key packet.
+     *
+     * @param inPublicKey The public key.
+     * @param inSigningPrivateKey The private key associated to the given
+     * public key.
+     * @param inPassPhrase The passphrase that protects the private key.
+     * @return The method returns a new secret key.
      * @throws PGPException
      */
 
-    static PGPKeyRingGenerator addSubKey(PGPSecretKeyRing inSecretKeyRing,
-                                         PGPKeyPair inKeyPairToAdd,
-                                         String inPassPhrase) throws PGPException {
+    static private PGPSecretKey createSecretKey(PGPPublicKey inPublicKey,
+                                                PGPPrivateKey inSigningPrivateKey,
+                                                char[] inPassPhrase) throws PGPException {
+
+        PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
+        PGPDigestCalculator sha256Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA256);
+        PBESecretKeyEncryptor encryptor = new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha256Calc).setProvider("BC").build(inPassPhrase);
+        // NOTES:
+        // * Other versions of the constructor "PGPSecretKey" exist.
+        //   These other versions allow the definition of subpackets.
+        // * Please note the value of the fourth parameter (false).
+        //   This value means that the generated secret key is a subkey.
+        return new PGPSecretKey(inSigningPrivateKey, inPublicKey, sha1Calc, false, encryptor);
+    }
+
+    /**
+     * Create a secret subkey designed to be added to a given keyring.
+     * @param inSecretKeyRing The keyring into which the new key will be added.
+     * @param inKeyPairToAdd The pair of keys to add.
+     * @param inPassPhrase The passphrase that protects the secret keyring content.
+     * @return The method returns a new secret subkey.
+     * @throws PGPException
+     */
+
+    static PGPSecretKey createSecretSubKey(PGPSecretKeyRing inSecretKeyRing,
+                                           PGPKeyPair inKeyPairToAdd,
+                                           String inPassPhrase) throws PGPException {
 
         char[] passPhrase = inPassPhrase.toCharArray();
+        PGPKeyPair[] keyPs = new PGPKeyPair[2];
 
-        List<PGPKeyPair> keyPairs = new ArrayList<PGPKeyPair>();
-        Iterator<PGPSecretKey> secretKeyIterator = inSecretKeyRing.getSecretKeys();
-        while (secretKeyIterator.hasNext()) {
-            PGPSecretKey secretKey = secretKeyIterator.next();
-            PGPPrivateKey privateKey = extractPrivateKey(secretKey, passPhrase);
-            PGPPublicKey publicKey = secretKey.getPublicKey();
-            PGPKeyPair kp = new PGPKeyPair(publicKey, privateKey);
-            keyPairs.add(kp);
-        }
-        keyPairs.add(inKeyPairToAdd);
-        PGPKeyPair[] keyPs = new PGPKeyPair[keyPairs.size()];
-        keyPairs.toArray(keyPs);
+        PGPPublicKey publicMasterKey = inSecretKeyRing.getPublicKey();
+        PGPPrivateKey privateMasterKey = Key.extractPrivateKey(inSecretKeyRing.getSecretKey(), passPhrase);
+        keyPs[0] = new PGPKeyPair(publicMasterKey, privateMasterKey);
+        keyPs[1] = inKeyPairToAdd;
 
-        String userId = inSecretKeyRing.getSecretKey().getUserIDs().next();
-        return getKeyRingGenerator(keyPs, userId, inPassPhrase);
+        List<PGPSecretKey> secretKeys = new ArrayList<>();
+        String userId = publicMasterKey.getUserIDs().next();
+        PGPKeyRingGenerator generator = getKeyRingGenerator(keyPs, userId, inPassPhrase);
+        generator.generateSecretKeyRing().getSecretKeys().forEachRemaining(secretKeys::add);
+        return secretKeys.get(1);
     }
 
 
     public static void main(String[] args) {
         // Declare the provider "BC" (for Bouncy Castle).
+        final int separatorLength = 50;
         Security.addProvider(new BouncyCastleProvider());
         String ownerId = "owner@email.com";
         String passPhrase = "password";
-        String publicKeyRing1ArmoredPath = "data/public-keyring1-armored.pgp";
-        String secretKeyRing1ArmoredPath = "data/secret-keyring1-armored.pgp";
-        String publicKeyRing1BinPath = "data/public-keyring1-bin.pgp";
-        String secretKeyRing1BinPath = "data/secret-keyring1-bin.pgp";
-        String publicKey1PrefixPath = "data/public-key1-";
-        String secretKey1PrefixPath = "data/secret-key1-";
-        String publicKeyRing2ArmoredPath = "data/public-keyring2-armored.pgp";
-        String secretKeyRing2ArmoredPath = "data/secret-keyring2-armored.pgp";
-        String publicKeyRing2BinPath = "data/public-keyring2-bin.pgp";
-        String secretKeyRing2BinPath = "data/secret-keyring2-bin.pgp";
-        String publicKey2PrefixPath = "data/public-key2-";
-        String secretKey2PrefixPath = "data/secret-key2-";
-        String signedPublicKeyPath = "data/signed-public-key.pgp";
-        String signedSecretKeyPrefixPath = "data/signed-secret-key";
+        String publicKeyRing1ArmoredPath = "data/public-keyring1.pgp";
+        String secretKeyRing1ArmoredPath = "data/secret-keyring1.pgp";
+        String publicKeyRing2ArmoredPath = "data/public-keyring2.pgp";
+        String secretKeyRing2ArmoredPath = "data/secret-keyring2.pgp";
 
         try {
             // -------------------------------------------------------
             // Create a key ring with 3 key pairs.
             // -------------------------------------------------------
 
-            System.out.printf("%s\n\n", "=".repeat(30));
+            System.out.printf("%s\n", "=".repeat(separatorLength));
+            System.out.printf("Create a keyring\n");
+            System.out.printf("%s\n\n", "=".repeat(separatorLength));
 
             // Create the master key.
             PGPKeyPair masterRsaKeyPair = createRsaKeyPair();
+            PGPPrivateKey masterPrivateKey = masterRsaKeyPair.getPrivateKey();
+
             // **WARNING**: sub-keys of type DSA cannot be "cross-certified" using GPG 2.2.19.
             // If you don't use PGP, then you can create a DSA sub-key:
             // PGPKeyPair subKeyPair1 = createDsaKeyPair();
@@ -461,87 +323,56 @@ public class Main {
             PGPPublicKeyRing pubRing = keyRingGen.generatePublicKeyRing();
             PGPSecretKeyRing secRing = keyRingGen.generateSecretKeyRing();
 
-            // -------------------------------------------------------
-            // Dump information.
-            // -------------------------------------------------------
-
             System.out.println("Keys:");
             List<PGPSecretKey> secretKeys = getSecretKeyIds(secRing);
             for (PGPSecretKey k: secretKeys) {
                 System.out.printf("\t\t[%X] algo=%d (is master ? %s, is signing ? %s)\n", k.getKeyID(), k.getKeyEncryptionAlgorithm(), k.isMasterKey() ? "yes" : "no", k.isSigningKey() ? "yes" : "no");
             }
-            System.out.printf("* algo: %s\n", "https://tools.ietf.org/html/rfc4880#section-9.2\n\n");
+            System.out.printf("\n");
 
-            System.out.printf(String.format("Create the armored public key ring 1 \"%s\"\n", publicKeyRing1ArmoredPath));
-            System.out.printf(String.format("Create the armored secret key ring 1 \"%s\"\n", secretKeyRing1ArmoredPath));
+            System.out.printf("Create the armored public key ring 1 \"%s\"\n", publicKeyRing1ArmoredPath);
+            System.out.printf("Create the armored secret key ring 1 \"%s\"\n", secretKeyRing1ArmoredPath);
             dumpKeyRing(pubRing, publicKeyRing1ArmoredPath, true);
             dumpKeyRing(secRing, secretKeyRing1ArmoredPath, true);
-
-            System.out.printf(String.format("Create the binary public key ring 1 \"%s\"\n", publicKeyRing1BinPath));
-            System.out.printf(String.format("Create the binary secret key ring 1 \"%s\"\n", secretKeyRing1BinPath));
-            dumpKeyRing(pubRing, publicKeyRing1BinPath, false);
-            dumpKeyRing(secRing, secretKeyRing1BinPath, false);
-
-            dumpAllPublicKeys(pubRing, publicKey1PrefixPath);
-            dumpAllSecretKeys(secRing, secretKey1PrefixPath, passPhrase);
+            System.out.printf(">> gpg --list-packet %s\n", publicKeyRing1ArmoredPath);
+            System.out.printf(">> gpg --list-packet %s\n", secretKeyRing1ArmoredPath);
 
             // -------------------------------------------------------
             // Add a subkey to a keyring.
             // -------------------------------------------------------
 
-            System.out.printf("\n%s\n\n", "=".repeat(30));
+            System.out.printf("\n%s\n", "=".repeat(separatorLength));
+            System.out.printf("Create a new subkey\n");
+            System.out.printf("Add Primary Key Binding Signature to the subkey\n");
+            System.out.printf("Add the subkey to the keyring\n");
+            System.out.printf("%s\n\n", "=".repeat(separatorLength));
 
-            PGPKeyPair keysToBeAdded = createRsaKeyPair();
-            keyRingGen = addSubKey(secRing, keysToBeAdded, passPhrase);
-            pubRing = keyRingGen.generatePublicKeyRing();
-            secRing = keyRingGen.generateSecretKeyRing();
+            // Create a secret subkey designed to be added to the keyring.
+            PGPSecretKey newSecretSubKey = createSecretSubKey(secRing, createRsaKeyPair(), passPhrase);
 
-            // -------------------------------------------------------
-            // Dump information.
-            // -------------------------------------------------------
+            // Add a Primary Key Binding Signature (tag=2, type=0x19) to the previously created secret key.
+            newSecretSubKey = createSecretKey(
+                    addPrimaryKeyBindingSignature(newSecretSubKey.getPublicKey(), masterPrivateKey),
+                    Key.extractPrivateKey(newSecretSubKey, passPhrase.toCharArray()),
+                    passPhrase.toCharArray());
+
+            // Add the new subkey to the keyring.
+            pubRing = PGPPublicKeyRing.insertPublicKey(pubRing, newSecretSubKey.getPublicKey());
+            secRing = PGPSecretKeyRing.insertSecretKey(secRing, newSecretSubKey);
 
             System.out.println("Keys:");
             secretKeys = getSecretKeyIds(secRing);
             for (PGPSecretKey k: secretKeys) {
                 System.out.printf("\t\t[%X] algo=%d (is master ? %s, is signing ? %s)\n", k.getKeyID(), k.getKeyEncryptionAlgorithm(), k.isMasterKey() ? "yes" : "no", k.isSigningKey() ? "yes" : "no");
             }
-            System.out.printf("* algo: %s\n", "https://tools.ietf.org/html/rfc4880#section-9.2\n\n");
+            System.out.printf("\n");
 
-            System.out.printf(String.format("Create the armored public key ring 2 \"%s\"\n", publicKeyRing2ArmoredPath));
-            System.out.printf(String.format("Create the armored secret key ring 2 \"%s\"\n", secretKeyRing2ArmoredPath));
+            System.out.printf("Create the armored public key ring 2 \"%s\"\n", publicKeyRing2ArmoredPath);
+            System.out.printf("Create the armored secret key ring 2 \"%s\"\n", secretKeyRing2ArmoredPath);
             dumpKeyRing(pubRing, publicKeyRing2ArmoredPath, true);
             dumpKeyRing(secRing, secretKeyRing2ArmoredPath, true);
-
-            System.out.printf(String.format("Create the binary public key ring 2 \"%s\"\n", publicKeyRing2BinPath));
-            System.out.printf(String.format("Create the binary secret key ring 2 \"%s\"\n", secretKeyRing2BinPath));
-            dumpKeyRing(pubRing, publicKeyRing2BinPath, false);
-            dumpKeyRing(secRing, secretKeyRing2BinPath, false);
-
-            dumpAllPublicKeys(pubRing, publicKey2PrefixPath);
-            dumpAllSecretKeys(secRing, secretKey2PrefixPath, passPhrase);
-
-            // -------------------------------------------------------
-            // Sign secret key.
-            // -------------------------------------------------------
-
-            System.out.printf("\n%s\n\n", "=".repeat(30));
-
-            List<PGPSecretKey> secretKeyList = new ArrayList<>();
-            Iterator<PGPSecretKey> secretKeyIterator = secRing.getSecretKeys();
-            secretKeyIterator.forEachRemaining(secretKeyList::add);
-            PGPSecretKey secretMasterKey = secretKeyList.get(0);
-            PGPSecretKey secretKeyToSign = secretKeyList.get(1);
-            PGPPrivateKey signingPrivateKey = extractPrivateKey(secretMasterKey, passPhrase.toCharArray());
-            PGPSecretKey signedKey = signKey(secretKeyToSign, signingPrivateKey, passPhrase.toCharArray());
-
-            System.out.printf("Secret master key ID: %X\n", secretMasterKey.getKeyID());
-            System.out.printf("Secret subkey ID:     %X\n", secretKeyToSign.getKeyID());
-            System.out.printf("Signed public key: %s\n", signedPublicKeyPath);
-            System.out.printf("Signed secret key: %s\n", signedSecretKeyPrefixPath);
-
-            dumpPublicKey(signedKey.getPublicKey(), signedPublicKeyPath);
-            dumpSecretKey(signedKey, signedSecretKeyPrefixPath, passPhrase.toCharArray());
-
+            System.out.printf(">> gpg --list-packet %s\n", publicKeyRing2ArmoredPath);
+            System.out.printf(">> gpg --list-packet %s\n", secretKeyRing2ArmoredPath);
 
         } catch (Exception e) {
             e.printStackTrace();

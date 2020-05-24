@@ -28,7 +28,6 @@ public class Key {
 
     public static PGPPrivateKey extractPrivateKey(PGPSecretKey pgpSecKey, char[] passPhrase)
             throws PGPException {
-        PGPPrivateKey privateKey = null;
         BcPGPDigestCalculatorProvider calculatorProvider = new BcPGPDigestCalculatorProvider();
         BcPBESecretKeyDecryptorBuilder secretKeyDecryptorBuilder = new BcPBESecretKeyDecryptorBuilder(calculatorProvider);
         PBESecretKeyDecryptor pBESecretKeyDecryptor = secretKeyDecryptorBuilder.build(passPhrase);

@@ -1,7 +1,0 @@
-Box-drawing characters, also known as line-drawing characters, are a form of semigraphics widely used in text user
-interfaces to draw various geometric frames and boxes. Box-drawing characters typically only work well with monospaced
-fonts.
-
-In graphical user interfaces, these characters are much less useful as it is more simple and appropriate to draw lines
-and rectangles directly with graphical APIs. However, they are still useful for command-line interfaces and plaintext
-comments within source code.
