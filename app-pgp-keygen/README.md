@@ -23,41 +23,12 @@ or
 
 > Make sure to run `gradle setup` (at the project root level) first.
 
-## Keys structure
+# Notes
 
-Be aware that `PGPPrivateKey` is not identical to `PGPSecretKey`.
-
-The public PGP key structure is defined in the [section 5.5.2 of the RFC 4880](https://tools.ietf.org/html/rfc4880#section-5.5.2).
-
-The private PGP key structure is defined in the [section 5.5.3 of the RFC 4880](https://tools.ietf.org/html/rfc4880#section-5.5.3).
+Sub-keys of type DSA cannot be "[cross-certified](../doc/cross-certify.md)" using GPG 2.2.19.
 
 What is the _key ID_ ? In PGP, most keys are created in such a way so that what is called the "key ID" is equal to the
 lower 32 or 64 bits respectively of a key fingerprint. PGP uses key IDs to refer to public keys for a variety of purposes.
-
-# Testing the program
-
-**WARNING**: sub-keys of type DSA cannot be "[cross-certified](../doc/cross-certify.md)" using GPG 2.2.19.
-
-# Description
-
-* `dumpKeyRing`: dump a keyring into a file.
-* `extractPrivateKey`: extract the private key from a secret key.
-* `dumpPublicKey`: dump a public key into a file.
-* `dumpSecretKey`: dump a secret key into a file.
-* `dumpAllPublicKeys`: dump all (public) keys from a public keyring.
-* `dumpAllSecretKeys`: dump all (secret) keys from a secret keyring.
-* `createRsaKeyPair`: create an RSA key pair.
-* `createDsaKeyPair`: create a DSA key pair.
-* `createElGamalKeyPair`: create an El Gamal key pair.
-* `getKeyRingGenerator`: create a key generator.
-* `getSecretKeyIds`: returns all the key IDs from a secret keyring.
-* `signKey`: sign a secret key (inludes subpackets).
-* `addSubKey`: add a subkey to a keyring.
-
-# Notes
-
-Sub-keys of type DSA cannot be [cross-certified](../doc/cross-certify.md) using GPG 2.2.19.
-If you don't use PGP, then you can create a DSA sub-key.
 
 You may get the exception "`only SHA1 supported for key checksum calculations`".
 
@@ -68,8 +39,6 @@ previous versions of PGP and GPG is now deprecated.
 
 # Documents
 
-* [what is GPG "cross-certification"](../doc/cross-certify.md)
-* [Why does a secret key have a <ultimate> uid ?](https://unix.stackexchange.com/questions/407062/gpg-list-keys-command-outputs-uid-unknown-after-importing-private-key-onto)
 * [java sign public pgp key with bouncycastle](https://stackoverflow.com/questions/28591684/java-sign-public-pgp-key-with-bouncycastle)
 * [PGP keys, software security, and much more threatened by new SHA1 exploit](https://arstechnica.com/information-technology/2020/01/pgp-keys-software-security-and-much-more-threatened-by-new-sha1-exploit/)
 * [SHA256 RSAkeyPairGenerator #200](https://github.com/bcgit/bc-java/issues/200)
