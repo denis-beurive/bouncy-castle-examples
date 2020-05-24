@@ -77,6 +77,7 @@ On this repository:
 * [Anatomy of a secret key keyring](doc/pgp-packets-secret-keyring.md)
 * [Anatomy of a signature](doc/pgp-packets-signature.md)
 * [Anatomy of a key revocation certificate](doc/pgp-packets-revocation.md)
+* [PGP web of trust](doc/pgp-web-of-trust.md)
 * [Cross-certification](doc/cross-certify.md)
 * [GPG commands](doc/gpg.md)
 
