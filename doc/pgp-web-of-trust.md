@@ -51,8 +51,11 @@ Export the keys again:
 
 Export the keys structures before and after the signature process:
 
+    # Bob's key (signed by Alice)
     gpg --list-packet pub-bob.key > pub-bob.key.txt
     gpg --list-packet signed-pub-bob.key > signed-pub-bob.key.txt
+    
+    # Alice's key (signed by Bob)
     gpg --list-packet pub-alice.key > pub-alice.key.txt
     gpg --list-packet signed-pub-alice.key > signed-pub-alice.key.txt
     
@@ -66,5 +69,36 @@ Then compare the keys structures before and after the signature process:
 
 ![](pgp-web-of-trust/alice-signed-bob.PNG)
 
-A [Positive certification of a User ID and Public-Key packet](https://tools.ietf.org/html/rfc4880#section-5.2.1) has been added.
+A [Positive certification of a User ID and Public-Key packet (0x13)](https://tools.ietf.org/html/rfc4880#section-5.2.1) has been added.
 
+Bob's key, signed by Alice:
+
+    # off=645 ctb=89 tag=2 hlen=3 plen=307
+    :signature packet: algo 1, keyid 51227F61976B0759
+        version 4, created 1590353367, md5len 0, sigclass 0x13
+        digest algo 8, begin of digest 70 cd
+        hashed subpkt 33 len 21 (issuer fpr v4 988D01E79CB610872D0C6D2051227F61976B0759)
+        hashed subpkt 2 len 4 (sig created 2020-05-24)
+        subpkt 16 len 8 (issuer key ID 51227F61976B0759)
+        data: [2047 bits]
+
+Issuer key ID `51227F61976B0759`. This is Alice's key.
+
+Alice's key, signed by Bob:
+
+    # off=649 ctb=89 tag=2 hlen=3 plen=307
+    :signature packet: algo 1, keyid B1589F0D0EA747F5
+        version 4, created 1590353270, md5len 0, sigclass 0x13
+        digest algo 8, begin of digest 82 cc
+        hashed subpkt 33 len 21 (issuer fpr v4 BF639C0FD3CD3872828856C3B1589F0D0EA747F5)
+        hashed subpkt 2 len 4 (sig created 2020-05-24)
+        subpkt 16 len 8 (issuer key ID B1589F0D0EA747F5)
+        data: [2044 bits]
+	
+Issuer key ID `B1589F0D0EA747F5`. This is Bob's key.
+
+> Please note that there are [4 types of key certification](https://tools.ietf.org/html/rfc4880#section-5.2.1).
+> * **0x10**: Generic certification of a User ID and Public-Key packet
+> * **0x11**: Persona certification of a User ID and Public-Key packet.
+> * **0x12**: Casual certification of a User ID and Public-Key packet.
+> * **0x13**: Positive certification of a User ID and Public-Key packet.
