@@ -183,9 +183,9 @@ public class Main {
 
     public static void main(String[] args) {
 
-        String inputFile = "data/file-to-encrypt.txt";
-        String outputFile = "data/encrypted-file.pgp";
-        String keyRingFile = "data/public-keyring.pgp";
+        final String inputFile = "data/file-to-encrypt.txt";
+        final String outputFile = "data/encrypted-file.pgp";
+        final String keyRingFile = "data/public-keyring.pgp";
 
         // Declare the provider "BC" (for Bouncy Castle).
         Security.addProvider(new BouncyCastleProvider());

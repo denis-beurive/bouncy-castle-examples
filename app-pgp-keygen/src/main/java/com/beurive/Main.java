@@ -289,12 +289,12 @@ public class Main {
         // Declare the provider "BC" (for Bouncy Castle).
         final int separatorLength = 50;
         Security.addProvider(new BouncyCastleProvider());
-        String ownerId = "owner@email.com";
-        String passPhrase = "password";
-        String publicKeyRing1ArmoredPath = "data/public-keyring1.pgp";
-        String secretKeyRing1ArmoredPath = "data/secret-keyring1.pgp";
-        String publicKeyRing2ArmoredPath = "data/public-keyring2.pgp";
-        String secretKeyRing2ArmoredPath = "data/secret-keyring2.pgp";
+        final String ownerId = "owner@email.com";
+        final String passPhrase = "password";
+        final String publicKeyRing1ArmoredPath = "data/public-keyring1.pgp";
+        final String secretKeyRing1ArmoredPath = "data/secret-keyring1.pgp";
+        final String publicKeyRing2ArmoredPath = "data/public-keyring2.pgp";
+        final String secretKeyRing2ArmoredPath = "data/secret-keyring2.pgp";
 
         try {
             // -------------------------------------------------------

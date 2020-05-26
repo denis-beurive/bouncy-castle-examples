@@ -205,12 +205,12 @@ public class Main {
     public static void main(String[] args) {
         // Declare the provider "BC" (for Bouncy Castle).
         Security.addProvider(new BouncyCastleProvider());
-        String passPhrase = "password";
-        String secretKeyRingPath = "data/secret-keyring.pgp";
-        String publicKeyRingPath = "data/public-keyring.pgp";
-        String subkeyWithRevocationSignaturePath = "data/subkey-with-revocation-signature.pgp";
-        String subkeyRevocationCertificatePath = "data/subkey-revocation-certificate.pgp";
-        String maskerKeyRevocationCertificatePath = "data/master-key-revocation-certificate.pgp";
+        final String passPhrase = "password";
+        final String secretKeyRingPath = "data/secret-keyring.pgp";
+        final String publicKeyRingPath = "data/public-keyring.pgp";
+        final String subkeyWithRevocationSignaturePath = "data/subkey-with-revocation-signature.pgp";
+        final String subkeyRevocationCertificatePath = "data/subkey-revocation-certificate.pgp";
+        final String maskerKeyRevocationCertificatePath = "data/master-key-revocation-certificate.pgp";
         ArmoredOutputStream armoredOutputStream;
         BCPGOutputStream basicOut;
 

@@ -1,5 +1,6 @@
 package org.beurive.pgp;
 
+import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
@@ -8,6 +9,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Keyring {
 
@@ -154,5 +156,130 @@ public class Keyring {
         return keys.toArray(new PGPPublicKey[0]);
     }
 
+    /**
+     * Create a textual representation of a given public keyring.
+     * @param inKeyRing The public keyring to dump.
+     * @param inIndent Indent prepended to each line.
+     * @return The method returns a textual representation of the given public keyring.
+     */
 
+    static public StringBuilder dumpPublic(PGPPublicKeyRing inKeyRing, String inIndent) {
+        StringBuilder text = new StringBuilder();
+        PGPPublicKey[] keys = getPublicKeys(inKeyRing);
+        for (PGPPublicKey k: keys) {
+            text.append(String.format("%sID: %16X (master:%s)\n",
+                    inIndent,
+                    k.getKeyID(),
+                    k.isMasterKey() ? "yes" : "no"));
+            if (k.isMasterKey()) {
+                text.append(String.format("%s    users:%s\n",
+                        inIndent,
+                        getUsers(k).stream().map(Object::toString).collect(Collectors.joining(", "))));
+            }
+        }
+        return text;
+    }
+
+    /**
+     * Create a textual representation of a given public keyring.
+     * @param inKeyRing The public keyring to dump.
+     * @return The method returns a textual representation of the given public keyring.
+     */
+
+    static public StringBuilder dumpPublic(PGPPublicKeyRing inKeyRing) {
+        return dumpPublic(inKeyRing, "");
+    }
+
+    /**
+     * Dump a given public keyring into a file identified by its path.
+     * @param inKeyRing The keyring to dump.
+     * @param inPath The path to the file.
+     * @throws IOException
+     */
+
+    static public void dumpPublicToPath(PGPPublicKeyRing inKeyRing, String inPath) throws
+            IOException {
+        ArmoredOutputStream out = new ArmoredOutputStream(new FileOutputStream(new File(inPath)));
+        inKeyRing.encode(out);
+        out.close();
+    }
+
+    /**
+     * Create a textual representation of a given secret key users.
+     * @param inKey The secret key.
+     * @return The method returns a textual representation of the given secret key users.
+     */
+
+    static public ArrayList<String> getUsers(PGPSecretKey inKey) {
+        ArrayList<String> users = new ArrayList<>();
+        Iterator<String> it = inKey.getUserIDs();
+        while (it.hasNext()) {
+            users.add(it.next());
+        }
+        return users;
+    }
+
+    /**
+     * Create a textual representation of a given public key users.
+     * @param inKey The secret key.
+     * @return The method returns a textual representation of the given public key users.
+     */
+
+    static public ArrayList<String> getUsers(PGPPublicKey inKey) {
+        ArrayList<String> users = new ArrayList<>();
+        Iterator<String> it = inKey.getUserIDs();
+        while (it.hasNext()) {
+            users.add(it.next());
+        }
+        return users;
+    }
+
+    /**
+     * Create a textual representation of a given secret keyring.
+     * @param inKeyRing The secret keyring to dump.
+     * @param inIndent Indent prepended to each line.
+     * @return The method returns a textual representation of the given secret keyring.
+     */
+
+    static public StringBuilder dumpSecret(PGPSecretKeyRing inKeyRing, String inIndent) {
+        StringBuilder text = new StringBuilder();
+        PGPSecretKey[] keys = getSecretKeys(inKeyRing, false);
+        for (PGPSecretKey k: keys) {
+            text.append(String.format("%sID: %16X (master:%s, signing: %s)\n",
+                    inIndent,
+                    k.getKeyID(),
+                    k.isMasterKey() ? "yes" : "no",
+                    k.isSigningKey() ? "yes" : "no"));
+            if (k.isMasterKey()) {
+                text.append(String.format("%s    users:%s\n",
+                        inIndent,
+                        getUsers(k).stream().map(Object::toString).collect(Collectors.joining(", "))));
+            }
+        }
+        return text;
+    }
+
+    /**
+     * Create a textual representation of a given secret keyring.
+     * @param inKeyRing The secret keyring to dump.
+     * @return The method returns a textual representation of the given secret keyring.
+     */
+
+    static public StringBuilder dumpSecret(PGPSecretKeyRing inKeyRing) {
+        return dumpSecret(inKeyRing, "");
+    }
+
+    /**
+     * Dump a given secret keyring into a file identified by its path.
+     * @param inKeyRing The keyring to dump.
+     * @param inPath The path to the file.
+     * @throws IOException
+     */
+
+    static public void dumpSecretToPath(PGPSecretKeyRing inKeyRing, String inPath) throws
+            IOException {
+        ArmoredOutputStream out = new ArmoredOutputStream(new FileOutputStream(new File(inPath)));
+        inKeyRing.encode(out);
+        out.close();
+    }
 }

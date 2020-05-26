@@ -837,17 +837,17 @@ public class Main {
     public static void main(String[] args) {
         // Declare the provider "BC" (for Bouncy Castle).
         Security.addProvider(new BouncyCastleProvider());
-        String documentToSign = "Message to sign";
-        String passPhrase = "password";
-        String secretKeyRingPath = "./data/secret-keyring.pgp";
-        String publicKeyRingPath = "./data/public-keyring.pgp";
-        String fileToSignPath = "./data/document-to-sign.txt";
-        String sigMasterPath = "./data/signature-master.pgp";
-        String sigSubKeyPath = "./data/signature-subkey.pgp";
-        String sigSubKeyPathBis = "./data/signature-subkey-bis.pgp";
-        String sigDetachedMasterPath = "./data/detached-signature-master.pgp";
-        String sigDetachedSubKeyPath = "./data/detached-signature-subkey.pgp";
-        String reSigDocumentPath = "./data/resig-signature-master.pgp";
+        final String documentToSign = "Message to sign";
+        final String passPhrase = "password";
+        final String secretKeyRingPath = "./data/secret-keyring.pgp";
+        final String publicKeyRingPath = "./data/public-keyring.pgp";
+        final String fileToSignPath = "./data/document-to-sign.txt";
+        final String sigMasterPath = "./data/signature-master.pgp";
+        final String sigSubKeyPath = "./data/signature-subkey.pgp";
+        final String sigSubKeyPathBis = "./data/signature-subkey-bis.pgp";
+        final String sigDetachedMasterPath = "./data/detached-signature-master.pgp";
+        final String sigDetachedSubKeyPath = "./data/detached-signature-subkey.pgp";
+        final String reSigDocumentPath = "./data/resig-signature-master.pgp";
 
         try {
             // Print the list of key IDs in the secret key ring.
