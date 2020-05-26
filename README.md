@@ -67,6 +67,7 @@ Then, build all the example applications:
 | Signing              | [app-pgp-sign](app-pgp-sign)                   | Create and verify signatures                                                       |
 | Revocation           | [app-pgp-revocation](app-pgp-revocation)       | Create revocation certificates                                                     |
 | Encryption           | [app-pgp-encrypt](app-pgp-encrypt)             | Encrypt a file                                                                     |
+| Web of trust         | [app-pgp-web-of-trust](app-pgp-web-of-trust)   | Key signing                                                                        |
 
 # Documents
 
