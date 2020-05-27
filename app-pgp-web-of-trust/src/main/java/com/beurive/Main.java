@@ -2,37 +2,17 @@
 
 package com.beurive;
 
-import java.io.*;
-import java.lang.IllegalArgumentException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.Date;
 import java.security.Security;
 import java.util.Iterator;
-import java.util.List;
 
 import org.beurive.pgp.Key;
 import org.beurive.pgp.Keyring;
-import org.bouncycastle.crypto.generators.DSAKeyPairGenerator;
-import org.bouncycastle.crypto.generators.DSAParametersGenerator;
-import org.bouncycastle.crypto.generators.ElGamalKeyPairGenerator;
-import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
-import org.bouncycastle.crypto.params.DSAKeyGenerationParameters;
-import org.bouncycastle.crypto.params.ElGamalKeyGenerationParameters;
-import org.bouncycastle.crypto.params.ElGamalParameters;
-import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.openpgp.*;
-import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
-import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
-import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
-import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 
 
 public class Main {
@@ -64,6 +44,29 @@ public class Main {
         return PGPPublicKey.addCertification(inPublicSubkey, signatureGenerator.generate());
     }
 
+    /**
+     * Verify that a public key (the certified key) is certified by another public key
+     * (the certifier key).
+     * @param inCertifiedPublicKey The certified key.
+     * @param inCertifierPublicKey The certifier key.
+     * @return If the certified key is certified by the certifier key, then the method returns the value true.
+     * Otherwise, the method returns the value false.
+     * @warning We don't check that the so-called certified key contains a certification signature.
+     * @throws PGPException
+     */
+
+    public static boolean verifyCertification(PGPPublicKey inCertifiedPublicKey,
+                                              PGPPublicKey inCertifierPublicKey) throws PGPException {
+        Iterator<PGPSignature> it = inCertifiedPublicKey.getKeySignatures();
+        while (it.hasNext()) {
+            PGPSignature sig = it.next();
+            if (sig.isCertification()) {
+                sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), inCertifierPublicKey);
+                if (sig.verify()) return true;
+            }
+        }
+        return false;
+    }
 
     public static void main(String[] args) {
         // Declare the provider "BC" (for Bouncy Castle).
@@ -114,6 +117,21 @@ public class Main {
             System.out.printf(String.format("> gpg --list-packet %s\n", bobNewPubKeyRingPath));
             Keyring.dumpPublicToPath(bobPubKeyRing, bobNewPubKeyRingPath);
 
+            // Verify the certifications.
+            PGPPublicKey certifiedKey;
+            PGPPublicKey certifierKey;
+
+            certifiedKey = alicePubKeyRing.getPublicKey();
+            certifierKey = bobPubKeyRing.getPublicKey();
+            if (verifyCertification(certifiedKey, certifierKey)) {
+                System.out.printf("%X is certified by %X\n", certifiedKey.getKeyID(), certifierKey.getKeyID());
+            }
+
+            certifiedKey = bobPubKeyRing.getPublicKey();
+            certifierKey = alicePubKeyRing.getPublicKey();
+            if (verifyCertification(certifiedKey, certifierKey)) {
+                System.out.printf("%X is certified by %X\n", certifiedKey.getKeyID(), certifierKey.getKeyID());
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
