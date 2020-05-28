@@ -5,10 +5,9 @@ package com.beurive;
 import java.io.*;
 import java.lang.IllegalArgumentException;
 import java.math.BigInteger;
-import java.security.SecureRandom;
+import java.security.*;
 import java.util.ArrayList;
 import java.util.Date;
-import java.security.Security;
 import java.util.Iterator;
 import java.util.List;
 
@@ -32,6 +31,12 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 
 
 public class Main {
@@ -284,6 +289,43 @@ public class Main {
         return secretKeys.get(1);
     }
 
+    static public PGPSecretKey createSigningSubKey(
+            PGPSecretKey inMasterSecretKey,
+            String inPassPhrase)
+            throws IOException, PGPException, NoSuchProviderException, NoSuchAlgorithmException {
+
+        PGPDigestCalculator checksumCalculator = new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build().get(HashAlgorithmTags.SHA1);
+        JcePBESecretKeyEncryptorBuilder keyEncryptorBuilder = new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256);
+        JcaPGPContentSignerBuilder certificationSignerBuilder = new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA256).setProvider("BC");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+        JcaPGPKeyPair signSubKeyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_SIGN, kpg.generateKeyPair(), new Date());
+
+        PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
+                new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN,
+                        HashAlgorithmTags.SHA256).setProvider("BC"));
+
+        signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, signSubKeyPair.getPrivateKey());
+
+        PGPSignatureSubpacketGenerator subGen = new PGPSignatureSubpacketGenerator();
+
+        subGen.setEmbeddedSignature(false, signatureGenerator.generateCertification(inMasterSecretKey.getPublicKey(), signSubKeyPair.getPublicKey()));
+
+        PGPSecretKey secretSigSubKey = new PGPSecretKey(
+                PGPSignature.POSITIVE_CERTIFICATION,
+                signSubKeyPair,     // PGPKeyPair keyPair
+                "id@email.com",
+                checksumCalculator, // PGPDigestCalculator checksumCalculator
+                subGen.generate(),  // PGPSignatureSubpacketVector hashedPcks
+                null,   // PGPSignatureSubpacketVector unhashedPcks
+                certificationSignerBuilder,
+                keyEncryptorBuilder.build(inPassPhrase.toCharArray()));
+        return secretSigSubKey;
+    }
+
+    static public void createEncryptionSubKey() {
+
+    }
 
     public static void main(String[] args) {
         // Declare the provider "BC" (for Bouncy Castle).
@@ -373,6 +415,10 @@ public class Main {
             dumpKeyRing(secRing, secretKeyRing2ArmoredPath, true);
             System.out.printf(">> gpg --list-packet %s\n", publicKeyRing2ArmoredPath);
             System.out.printf(">> gpg --list-packet %s\n", secretKeyRing2ArmoredPath);
+
+
+            PGPSecretKey subSecretKey = createSigningSubKey(secRing.getSecretKey(), passPhrase);
+            System.out.printf("Is the generated key a subkey ? %s\n", (! subSecretKey.isMasterKey()) ? "yes" : "no");
 
         } catch (Exception e) {
             e.printStackTrace();
