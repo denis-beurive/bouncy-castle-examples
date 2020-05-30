@@ -50,8 +50,10 @@ previous versions of PGP and GPG is now deprecated.
 
 # Note about the creation of subkeys (BC version 1.65 only)
 
+> **IMPORTANT**
+>
 > Please note that what follows applies for version `1.65` of BC.
-> Beta version [166b07](https://downloads.bouncycastle.org/betas/) provides a wat to create a subkey without the use of a keyring. 
+> Beta version [166b07](https://downloads.bouncycastle.org/betas/) provides a way to create a subkey without the use of a keyring. 
 
 A keyring is made of one master key and, optionally, one or more subkeys. 
 
