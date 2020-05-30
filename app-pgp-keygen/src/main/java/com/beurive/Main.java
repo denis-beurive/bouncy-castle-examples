@@ -289,44 +289,83 @@ public class Main {
         return secretKeys.get(1);
     }
 
+    /**
+     * Generate a signing subkey.
+     * @param inMasterSecretKey The master key the generated subkey is bound to.
+     * @param inPassPhrase The passphrase that protects the master key.
+     * @return The method returns a new signing subkey bound to the given master key.
+     * @throws IOException
+     * @throws PGPException
+     * @throws NoSuchProviderException
+     * @throws NoSuchAlgorithmException
+     */
+
     static public PGPSecretKey createSigningSubKey(
             PGPSecretKey inMasterSecretKey,
             String inPassPhrase)
             throws IOException, PGPException, NoSuchProviderException, NoSuchAlgorithmException {
 
+        PBESecretKeyDecryptor masterDecryptor = new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(inPassPhrase.toCharArray());
         PGPDigestCalculator checksumCalculator = new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build().get(HashAlgorithmTags.SHA1);
         JcePBESecretKeyEncryptorBuilder keyEncryptorBuilder = new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256);
         JcaPGPContentSignerBuilder certificationSignerBuilder = new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA256).setProvider("BC");
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
-        JcaPGPKeyPair signSubKeyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_SIGN, kpg.generateKeyPair(), new Date());
-
+        JcaPGPKeyPair signSubKeyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_SIGN,
+                kpg.generateKeyPair(),
+                new Date());
         PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
                 new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN,
                         HashAlgorithmTags.SHA256).setProvider("BC"));
-
-        // This should declare a key as a subkey.
-//        signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, signSubKeyPair.getPrivateKey());
-        signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, Key.extractPrivateKey(inMasterSecretKey, inPassPhrase.toCharArray()));
+        signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, signSubKeyPair.getPrivateKey());
 
         PGPSignatureSubpacketGenerator subGen = new PGPSignatureSubpacketGenerator();
         subGen.setEmbeddedSignature(false, signatureGenerator.generateCertification(inMasterSecretKey.getPublicKey(), signSubKeyPair.getPublicKey()));
 
         PGPSecretKey secretSigSubKey = new PGPSecretKey(
-                PGPSignature.POSITIVE_CERTIFICATION,
-                signSubKeyPair,     // PGPKeyPair keyPair
-                "id@email.com",
-                checksumCalculator, // PGPDigestCalculator checksumCalculator
-                subGen.generate(),  // PGPSignatureSubpacketVector hashedPcks
-                null,   // PGPSignatureSubpacketVector unhashedPcks
+                inMasterSecretKey.extractKeyPair(masterDecryptor),
+                signSubKeyPair,
+                checksumCalculator,
+                subGen.generate(),
+                null,
                 certificationSignerBuilder,
                 keyEncryptorBuilder.build(inPassPhrase.toCharArray()));
+
         return secretSigSubKey;
     }
 
-    static public void createEncryptionSubKey() {
+    /**
+     * Generate an encryption subkey.
+     * @param inMasterSecretKey The master key the generated subkey is bound to.
+     * @param inPassPhrase The passphrase that protects the master key.
+     * @return The method returns a new encryption subkey bound to the given master key.
+     * @throws PGPException
+     * @throws NoSuchProviderException
+     * @throws NoSuchAlgorithmException
+     */
 
+    static public PGPSecretKey createEncryptionSubKey(PGPSecretKey inMasterSecretKey,
+                                                      String inPassPhrase)
+            throws PGPException,
+            NoSuchProviderException,
+            NoSuchAlgorithmException {
+        PBESecretKeyDecryptor masterDecryptor = new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(inPassPhrase.toCharArray());
+        PGPDigestCalculator checksumCalculator = new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build().get(HashAlgorithmTags.SHA1);
+        JcePBESecretKeyEncryptorBuilder keyEncryptorBuilder = new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256);
+        JcaPGPContentSignerBuilder certificationSignerBuilder = new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA256).setProvider("BC");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+        PGPSecretKey secretEncSubKey = new PGPSecretKey(
+                inMasterSecretKey.extractKeyPair(masterDecryptor),
+                new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_ENCRYPT, kpg.generateKeyPair(), new Date()),
+                checksumCalculator,
+                null,
+                null,
+                certificationSignerBuilder,
+                keyEncryptorBuilder.build(inPassPhrase.toCharArray()));
+        return secretEncSubKey;
     }
+
 
     public static void main(String[] args) {
         // Declare the provider "BC" (for Bouncy Castle).
@@ -338,6 +377,8 @@ public class Main {
         final String secretKeyRing1ArmoredPath = "data/secret-keyring1.pgp";
         final String publicKeyRing2ArmoredPath = "data/public-keyring2.pgp";
         final String secretKeyRing2ArmoredPath = "data/secret-keyring2.pgp";
+        final String signingSubkeyPath = "data/signing-subkey.pgp";
+        final String encryptSubkeyPath = "data/encrypt-subkey.pgp";
 
         try {
             // -------------------------------------------------------
@@ -417,11 +458,17 @@ public class Main {
             System.out.printf(">> gpg --list-packet %s\n", publicKeyRing2ArmoredPath);
             System.out.printf(">> gpg --list-packet %s\n", secretKeyRing2ArmoredPath);
 
+            System.out.printf("Generate a signing subkey \"%s\"\n", encryptSubkeyPath);
+            PGPSecretKey signingSubKey = createSigningSubKey(secRing.getSecretKey(), passPhrase);
+            Key.dumpSecretKey(signingSubKey, encryptSubkeyPath);
+            System.out.printf("Is the generated key a subkey ? %s\n", (! signingSubKey.isMasterKey()) ? "yes" : "no");
+            System.out.printf("Is the generated key a signing ? %s\n", signingSubKey.isSigningKey() ? "yes" : "no");
 
-            PGPSecretKey subSecretKey = createSigningSubKey(secRing.getSecretKey(), passPhrase);
-            Key.dumpSecretKey(subSecretKey, "sec.pgp");
-            System.out.printf("Is the generated key a subkey ? %s\n", (! subSecretKey.isMasterKey()) ? "yes" : "no");
-
+            System.out.printf("Generate an encryption subkey \"%s\"\n", signingSubkeyPath);
+            PGPSecretKey encryptSubKey = createEncryptionSubKey(secRing.getSecretKey(), passPhrase);
+            Key.dumpSecretKey(encryptSubKey, signingSubkeyPath);
+            System.out.printf("Is the generated key a subkey ? %s\n", (! encryptSubKey.isMasterKey()) ? "yes" : "no");
+            System.out.printf("Is the generated key an encryption key ? %s\n", (! encryptSubKey.isSigningKey()) ? "yes" : "no");
         } catch (Exception e) {
             e.printStackTrace();
         }
