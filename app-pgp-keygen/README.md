@@ -48,13 +48,14 @@ hash instead of the older 2 byte (16 bit) checksum used by previous versions of 
 This new SHA1 secret key hash is specifed in RFC2440; the simple 16 bit checksum used by most
 previous versions of PGP and GPG is now deprecated.  
 
-# Note about the creation of subkeys
+# Note about the creation of subkeys (BC version 1.65 only)
+
+> Please note that what follows applies for version `1.65` of BC.
+> Beta version [166b07](https://downloads.bouncycastle.org/betas/) provides a wat to create a subkey without the use of a keyring. 
 
 A keyring is made of one master key and, optionally, one or more subkeys. 
 
 Keyrings are created using a keyring generator (`org.bouncycastle.openpgp.PGPKeyRingGenerator`).
-
-The question is: can you create a subkey without the use of a keyring generator ?
 
 The technique implemented in this example uses a keyring generator to generate a subkey.
 
