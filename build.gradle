@@ -1,17 +1,62 @@
 // gradle tasks
 
+import groovy.io.FileType
+
 String root_dir = project.projectDir
+
+// Flag that tells Gradle if it must download BC dependencies from Maven
+// Central or not.
+// - if "USE_BC_BETA" is true: do not download BC dependencies from Maven
+//   Central.
+// - if "USE_BC_BETA" is false: download BC dependencies from Maven Central.
+//   The downloaded JAR files are stored into the directory "lib".
+//
+// Note: Having all dependencies in a well-known location makes setting
+//       CLASSPATH easy. We could use the Gradle cache in order to make the
+//       JARs available. But the structure of the Gradle cache makes the
+//       operation difficult.
+//
+// See https://docs.gradle.org/current/dsl/org.gradle.api.plugins.ExtraPropertiesExtension.html
+
+project.ext.set("USE_BC_BETA", true)
+
+// Return the character used separate JAR files within the CLASSPATH environment variable.
+// - Under Windows: ";"
+// - Under Unix: ":"
+// @return The character used separate JAR files within the CLASSPATH environment variable.
+def get_classpath_separator() {
+    Properties properties = System.getProperties();
+    return properties.getProperty("path.separator");
+}
+
+// Return the list of JAR files within a directory identified by its given path.
+// @param root_dir Path to the directory that contains the JAR files.
+// @return The list of JAR files within the given directory.
+static def get_class_path(String in_dir) {
+    def list = []
+    def dir = new File("${in_dir}")
+    dir.eachFileRecurse (FileType.FILES) { entry ->
+        if (entry.toString() ==~ /^.*\.jar$/) {
+            list << entry
+        }
+    }
+    return list
+}
+
 
 task setup {
 
-    // Download the dependencies and put them into the directory "lib".
-    // Having all dependencies in a well-known location makes setting CLASSPATH easy.
-    // Note: we could use the Gradle cache in order to make the JARs available.
-    //       But the structure of the Gradle cache makes the operation difficult.
-    def dependencies = [
+    // Depending on the value of the variable "use_bc_beta" download BC
+    // dependencies from Maven Central or not.
+    def dependencies;
+    if (project.USE_BC_BETA) {
+        dependencies = [];
+    } else {
+        dependencies = [
             'bcprov-jdk15to18-1.65.jar': 'https://repo1.maven.org/maven2/org/bouncycastle/bcprov-jdk15to18/1.65/bcprov-jdk15to18-1.65.jar',
             'bcpg-jdk15to18-1.65.jar': 'https://repo1.maven.org/maven2/org/bouncycastle/bcpg-jdk15to18/1.65/bcpg-jdk15to18-1.65.jar'
-    ]
+        ]
+    }
 
     File directory = new File("${root_dir}/lib");
     if (! directory.exists()){
@@ -25,16 +70,24 @@ task setup {
         }
     }
 
+    def jars = [get_class_path("${root_dir}/local-lib"),
+                get_class_path("${root_dir}/lib")].flatten()
+
     // Create a shell script that can be used to set environment variables.
     def file = new File("${root_dir}/setenv.sh")
-    file.setText("# usage: . setenv.sh\nexport PROJECT_ROOT_DIR=${root_dir}")
+    file.write("# usage: . setenv.sh\n")
+    file << "export PROJECT_ROOT_DIR=${root_dir}\n"
+    file << "export CLASSPATH=" + jars.join(';')
     file.createNewFile()
 
     file = new File("${root_dir}/setenv.bat")
-    file.setText("set PROJECT_ROOT_DIR=${root_dir}\nREM doskey java=C:\\Users\\denis.beurive\\tools\\java\\jdk-14\\bin\\java \$*")
+    file.write("SET PROJECT_ROOT_DIR=${root_dir}\n")
+    file << "SET CLASSPATH=" + jars.join(';') + "\n"
+    file << "REM doskey java=C:\\Users\\denis.beurive\\tools\\java\\jdk-14\\bin\\java \$*\n"
     file.createNewFile()
 }
 
+// Apply a configuration for all modules.
 allprojects {
     apply plugin: 'java'
     group 'org.example'
@@ -43,6 +96,14 @@ allprojects {
     repositories {
         mavenCentral()
     }
+
+    dependencies {
+        // Put all JARs from the directory "${root_dir}/local-lib" onto compile classpath.
+        // See https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.dsl.DependencyHandler.html
+        // Note : This configuration allows us to use a BETA version (not yet released on Maven Central)
+        //        of the BC library.
+        implementation fileTree("${root_dir}/local-lib")
+    }
 }
 
 subprojects {
@@ -50,7 +111,8 @@ subprojects {
 
     tasks.withType(Jar) {
         // Set the destination path for the JAR.
-        // It is not necessary to declare a dependency directory (flatDir { dirs "${root_dir}/lib" }).
+        // Note: It is not necessary to declare a dependency directory
+        //       (flatDir { dirs "${root_dir}/lib" }).
         if ("utils" == project.name) {
             destinationDirectory = file("${root_dir}/lib")
         }

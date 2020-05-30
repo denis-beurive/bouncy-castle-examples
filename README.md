@@ -2,29 +2,26 @@
 
 This repository contains sample programs for the [Bouncy Castle](https://www.bouncycastle.org) library.
 
+# Requirements
+
+You need:
+* [OpenJDK14](doc/java-version.md).
+* [Gradle 6.3](doc/gradle-version.md).
+
+# OPTIONAL: Using Bouncy Castle BETA version
+
+If you want to use a BETA version of Bouncy Castle, then follow these 2 steps:
+
+* edit the file `build.gradle` and set the project property `USE_BC_BETA` to `true`: `project.ext.set("USE_BC_BETA", true)`.
+* download the JAR files that contain the BC BETA version into the directory `local-lib`.
+  BC BETA versions can be downloaded from [this URL](https://downloads.bouncycastle.org/betas/).
+  For example, you can download `bcpg-jdk15on-166b07.jar` and `bcprov-jdk15on-166b07.jar` from [this URL](https://downloads.bouncycastle.org/betas/)
+  and put these files into the local directory `local-lib`.
+
+> Please note that there is probably a more elegant/better way to handle the use of BETA versions.
+> If you know, please let me know.
+
 # Build
-
-You need OpenJDK14.
-
-    $ java -version
-    openjdk version "14" 2020-03-17
-    OpenJDK Runtime Environment (build 14+36-1461)
-    OpenJDK 64-Bit Server VM (build 14+36-1461, mixed mode, sharing)
- 
-You also need Gradle 6.3.
-
-    ------------------------------------------------------------
-    Gradle 6.3
-    ------------------------------------------------------------
-    
-    Build time:   2020-03-24 19:52:07 UTC
-    Revision:     bacd40b727b0130eeac8855ae3f9fd9a0b207c60
-    
-    Kotlin:       1.3.70
-    Groovy:       2.5.10
-    Ant:          Apache Ant(TM) version 1.10.7 compiled on September 1 2019
-    JVM:          14 (Oracle Corporation 14+36-1461)
-    OS:           Linux 4.15.0-72-generic amd64
 
 First setup the environment:
 
@@ -99,3 +96,8 @@ On the WEB
 * **File and key manipulation**: [pg/src/main/java/org/bouncycastle/openpgp/examples/PGPExampleUtil.java](https://github.com/bcgit/bc-java/blob/master/pg/src/main/java/org/bouncycastle/openpgp/examples/PGPExampleUtil.java)
 * **Encrypt/Decrypt**: [pg/src/main/java/org/bouncycastle/openpgp/examples/KeyBasedFileProcessor.java](https://github.com/bcgit/bc-java/blob/master/pg/src/main/java/org/bouncycastle/openpgp/examples/KeyBasedFileProcessor.java)
 
+# Notes about Gradle
+
+* Path to the Gradle cache under Windows 10: `%HOMEPATH%\.gradle\caches`
+* [Experimenting with Gradle dependencies](https://alexfu.github.io/android/2017/11/07/experimenting-with-gradle-dependencies.html)
+* [Declare dependencies as JAR files](https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.dsl.DependencyHandler.html)

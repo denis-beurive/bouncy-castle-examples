@@ -1,2 +1,5 @@
+This directory is used to put the JAR files for a BC BETA release.
 
-See [Declaring repositories for Gradle dependencies](https://docs.gradle.org/current/userguide/dependency_management.html#declaring-repositories)
+For example:
+* [bcpg-jdk15on-166b07.jar](https://downloads.bouncycastle.org/betas/)
+* [bcprov-jdk15on-166b07.jar](https://downloads.bouncycastle.org/betas/)
