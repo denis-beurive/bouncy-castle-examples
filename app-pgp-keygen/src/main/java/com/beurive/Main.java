@@ -305,10 +305,11 @@ public class Main {
                 new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN,
                         HashAlgorithmTags.SHA256).setProvider("BC"));
 
-        signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, signSubKeyPair.getPrivateKey());
+        // This should declare a key as a subkey.
+//        signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, signSubKeyPair.getPrivateKey());
+        signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, Key.extractPrivateKey(inMasterSecretKey, inPassPhrase.toCharArray()));
 
         PGPSignatureSubpacketGenerator subGen = new PGPSignatureSubpacketGenerator();
-
         subGen.setEmbeddedSignature(false, signatureGenerator.generateCertification(inMasterSecretKey.getPublicKey(), signSubKeyPair.getPublicKey()));
 
         PGPSecretKey secretSigSubKey = new PGPSecretKey(
@@ -418,6 +419,7 @@ public class Main {
 
 
             PGPSecretKey subSecretKey = createSigningSubKey(secRing.getSecretKey(), passPhrase);
+            Key.dumpSecretKey(subSecretKey, "sec.pgp");
             System.out.printf("Is the generated key a subkey ? %s\n", (! subSecretKey.isMasterKey()) ? "yes" : "no");
 
         } catch (Exception e) {
