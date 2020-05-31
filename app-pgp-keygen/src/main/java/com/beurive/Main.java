@@ -21,6 +21,7 @@ import org.bouncycastle.crypto.params.ElGamalKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.KeyFactorySpi;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
@@ -38,8 +39,22 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 
-
 public class Main {
+
+    /**
+     * Flag that enable or disable some part of the code that is only available
+     * since BC BETA release 166b07.
+     *
+     * - true: enable the parts of the code that is available since BC BETA
+     *   release 166b07.
+     * - false:  disable the parts of the code that is available since BC BETA
+     *   release 166b07.
+     *
+     * Please note this variable is used **at compile time**.
+     * See https://stackoverflow.com/questions/1813853/ifdef-ifndef-in-java
+     */
+
+    private static final boolean ENABLE_BETA_166b07 = false;
 
     /**
      * Dump a given keyring into a file identified by its path.
@@ -303,35 +318,38 @@ public class Main {
     static public PGPSecretKey createSigningSubKey(
             PGPSecretKey inMasterSecretKey,
             String inPassPhrase)
-            throws IOException, PGPException, NoSuchProviderException, NoSuchAlgorithmException {
+            throws IOException, PGPException, NoSuchProviderException, NoSuchAlgorithmException, Exception {
 
-        PBESecretKeyDecryptor masterDecryptor = new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(inPassPhrase.toCharArray());
-        PGPDigestCalculator checksumCalculator = new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build().get(HashAlgorithmTags.SHA1);
-        JcePBESecretKeyEncryptorBuilder keyEncryptorBuilder = new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256);
-        JcaPGPContentSignerBuilder certificationSignerBuilder = new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA256).setProvider("BC");
+        if (ENABLE_BETA_166b07) {
+            PBESecretKeyDecryptor masterDecryptor = new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(inPassPhrase.toCharArray());
+            PGPDigestCalculator checksumCalculator = new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build().get(HashAlgorithmTags.SHA1);
+            JcePBESecretKeyEncryptorBuilder keyEncryptorBuilder = new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256);
+            JcaPGPContentSignerBuilder certificationSignerBuilder = new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA256).setProvider("BC");
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
-        JcaPGPKeyPair signSubKeyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_SIGN,
-                kpg.generateKeyPair(),
-                new Date());
-        PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
-                new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN,
-                        HashAlgorithmTags.SHA256).setProvider("BC"));
-        signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, signSubKeyPair.getPrivateKey());
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+            JcaPGPKeyPair signSubKeyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_SIGN,
+                    kpg.generateKeyPair(),
+                    new Date());
+            PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
+                    new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN,
+                            HashAlgorithmTags.SHA256).setProvider("BC"));
+            signatureGenerator.init(PGPSignature.PRIMARYKEY_BINDING, signSubKeyPair.getPrivateKey());
 
-        PGPSignatureSubpacketGenerator subGen = new PGPSignatureSubpacketGenerator();
-        subGen.setEmbeddedSignature(false, signatureGenerator.generateCertification(inMasterSecretKey.getPublicKey(), signSubKeyPair.getPublicKey()));
+            PGPSignatureSubpacketGenerator subGen = new PGPSignatureSubpacketGenerator();
+            subGen.setEmbeddedSignature(false, signatureGenerator.generateCertification(inMasterSecretKey.getPublicKey(), signSubKeyPair.getPublicKey()));
 
-        PGPSecretKey secretSigSubKey = new PGPSecretKey(
-                inMasterSecretKey.extractKeyPair(masterDecryptor),
-                signSubKeyPair,
-                checksumCalculator,
-                subGen.generate(),
-                null,
-                certificationSignerBuilder,
-                keyEncryptorBuilder.build(inPassPhrase.toCharArray()));
+            PGPSecretKey secretSigSubKey = new PGPSecretKey(
+                    inMasterSecretKey.extractKeyPair(masterDecryptor),
+                    signSubKeyPair,
+                    checksumCalculator,
+                    subGen.generate(),
+                    null,
+                    certificationSignerBuilder,
+                    keyEncryptorBuilder.build(inPassPhrase.toCharArray()));
 
-        return secretSigSubKey;
+            return secretSigSubKey;
+        }
+        throw new Exception("To execute this method please use BC BETA version 166b07.");
     }
 
     /**
@@ -348,22 +366,27 @@ public class Main {
                                                       String inPassPhrase)
             throws PGPException,
             NoSuchProviderException,
-            NoSuchAlgorithmException {
-        PBESecretKeyDecryptor masterDecryptor = new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(inPassPhrase.toCharArray());
-        PGPDigestCalculator checksumCalculator = new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build().get(HashAlgorithmTags.SHA1);
-        JcePBESecretKeyEncryptorBuilder keyEncryptorBuilder = new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256);
-        JcaPGPContentSignerBuilder certificationSignerBuilder = new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA256).setProvider("BC");
+            NoSuchAlgorithmException,
+            Exception {
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
-        PGPSecretKey secretEncSubKey = new PGPSecretKey(
-                inMasterSecretKey.extractKeyPair(masterDecryptor),
-                new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_ENCRYPT, kpg.generateKeyPair(), new Date()),
-                checksumCalculator,
-                null,
-                null,
-                certificationSignerBuilder,
-                keyEncryptorBuilder.build(inPassPhrase.toCharArray()));
-        return secretEncSubKey;
+        if (ENABLE_BETA_166b07) {
+            PBESecretKeyDecryptor masterDecryptor = new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(inPassPhrase.toCharArray());
+            PGPDigestCalculator checksumCalculator = new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build().get(HashAlgorithmTags.SHA1);
+            JcePBESecretKeyEncryptorBuilder keyEncryptorBuilder = new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256);
+            JcaPGPContentSignerBuilder certificationSignerBuilder = new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA256).setProvider("BC");
+
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+            PGPSecretKey secretEncSubKey = new PGPSecretKey(
+                    inMasterSecretKey.extractKeyPair(masterDecryptor),
+                    new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_ENCRYPT, kpg.generateKeyPair(), new Date()),
+                    checksumCalculator,
+                    null,
+                    null,
+                    certificationSignerBuilder,
+                    keyEncryptorBuilder.build(inPassPhrase.toCharArray()));
+            return secretEncSubKey;
+        }
+        throw new Exception("To execute this method please use BC BETA version 166b07.");
     }
 
 
@@ -458,17 +481,21 @@ public class Main {
             System.out.printf(">> gpg --list-packet %s\n", publicKeyRing2ArmoredPath);
             System.out.printf(">> gpg --list-packet %s\n", secretKeyRing2ArmoredPath);
 
-            System.out.printf("Generate a signing subkey \"%s\"\n", encryptSubkeyPath);
-            PGPSecretKey signingSubKey = createSigningSubKey(secRing.getSecretKey(), passPhrase);
-            Key.dumpSecretKey(signingSubKey, encryptSubkeyPath);
-            System.out.printf("Is the generated key a subkey ? %s\n", (! signingSubKey.isMasterKey()) ? "yes" : "no");
-            System.out.printf("Is the generated key a signing ? %s\n", signingSubKey.isSigningKey() ? "yes" : "no");
+            if (ENABLE_BETA_166b07) {
+                System.out.printf("Generate a signing subkey \"%s\"\n", encryptSubkeyPath);
+                PGPSecretKey signingSubKey = createSigningSubKey(secRing.getSecretKey(), passPhrase);
+                Key.dumpSecretKey(signingSubKey, encryptSubkeyPath);
+                System.out.printf("Is the generated key a subkey ? %s\n", (!signingSubKey.isMasterKey()) ? "yes" : "no");
+                System.out.printf("Is the generated key a signing ? %s\n", signingSubKey.isSigningKey() ? "yes" : "no");
 
-            System.out.printf("Generate an encryption subkey \"%s\"\n", signingSubkeyPath);
-            PGPSecretKey encryptSubKey = createEncryptionSubKey(secRing.getSecretKey(), passPhrase);
-            Key.dumpSecretKey(encryptSubKey, signingSubkeyPath);
-            System.out.printf("Is the generated key a subkey ? %s\n", (! encryptSubKey.isMasterKey()) ? "yes" : "no");
-            System.out.printf("Is the generated key an encryption key ? %s\n", (! encryptSubKey.isSigningKey()) ? "yes" : "no");
+                System.out.printf("Generate an encryption subkey \"%s\"\n", signingSubkeyPath);
+                PGPSecretKey encryptSubKey = createEncryptionSubKey(secRing.getSecretKey(), passPhrase);
+                Key.dumpSecretKey(encryptSubKey, signingSubkeyPath);
+                System.out.printf("Is the generated key a subkey ? %s\n", (!encryptSubKey.isMasterKey()) ? "yes" : "no");
+                System.out.printf("Is the generated key an encryption key ? %s\n", (!encryptSubKey.isSigningKey()) ? "yes" : "no");
+            } else {
+                System.out.printf("ENABLE_BETA_166b07 is false: BETA 166b07 feature is disabled.\n");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

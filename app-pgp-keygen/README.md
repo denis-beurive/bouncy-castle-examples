@@ -13,6 +13,18 @@ Illustrates the generation of the PGP keys and key rings.
 
 # Technical notes
 
+## Build the code for BC version 1.65
+
+Edit [this code](src/main/java/com/beurive/Main.java) and make sure that:
+
+    private static final boolean ENABLE_BETA_166b07 = false;
+    
+## Build the code for BC BETA version 166b07
+
+Edit [this code](src/main/java/com/beurive/Main.java) and make sure that:
+
+    private static final boolean ENABLE_BETA_166b07 = true;
+
 ## Run the example
 
     export MAIN=build/libs/app-pgp-keygen-1.0-SNAPSHOT.jar
@@ -48,7 +60,9 @@ hash instead of the older 2 byte (16 bit) checksum used by previous versions of 
 This new SHA1 secret key hash is specifed in RFC2440; the simple 16 bit checksum used by most
 previous versions of PGP and GPG is now deprecated.  
 
-# Note about the creation of subkeys (BC version 1.65 only)
+# Note about the creation of subkeys
+
+## BC version 1.65 only
 
 > **IMPORTANT**
 >
@@ -81,6 +95,15 @@ Then, we generate a temporary keyring (let's call it "TKR") using the previously
 Finally, we extract "SBK" from "TKR" and we add it to "KR".
 
 ![](doc/kr-after.svg)
+
+## BC BETA version 166b07
+
+It is not necessary to create a temporary keyring in order to generate a subkey.
+
+See methods:
+
+* [com.beurive.Main#createSigningSubKey](src/main/java/com/beurive/Main.java)
+* [com.beurive.Main#createEncryptionSubKey](src/main/java/com/beurive/Main.java)
 
 # Documents
 

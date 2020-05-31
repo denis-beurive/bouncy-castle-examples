@@ -18,7 +18,7 @@ String root_dir = project.projectDir
 //
 // See https://docs.gradle.org/current/dsl/org.gradle.api.plugins.ExtraPropertiesExtension.html
 
-project.ext.set("USE_BC_BETA", true)
+project.ext.set("USE_BC_BETA", false)
 
 // Return the character used separate JAR files within the CLASSPATH environment variable.
 // - Under Windows: ";"

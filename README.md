@@ -17,6 +17,10 @@ If you want to use a BETA version of Bouncy Castle, then follow these 2 steps:
   BC BETA versions can be downloaded from [this URL](https://downloads.bouncycastle.org/betas/).
   For example, you can download `bcpg-jdk15on-166b07.jar` and `bcprov-jdk15on-166b07.jar` from [this URL](https://downloads.bouncycastle.org/betas/)
   and put these files into the local directory `local-lib`.
+* you should delete all BC JAR files from the Gradle cache (just to be sure...).
+  Under Windows, the Gradle cache is located here: `%HOMEPATH%\.gradle\caches`.
+  Under Unix, it is located here: `${HOME}\.gradle\caches`.
+* you should also delete all BC JAR files under the directory `lib` (just to be sure...).
 
 > Please note that there is probably a more elegant/better way to handle the use of BETA versions.
 > If you know, please let me know.
