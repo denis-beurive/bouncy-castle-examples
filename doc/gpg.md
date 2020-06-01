@@ -133,3 +133,13 @@ Then **SELECT THE (SUBKEY) to revoke**:
 At the end, you should export the (public) keyring (which _IS_ the revocation certificate):
 
     gpg --armor --output revocation-certificate-for-subkey-FD46A5EFC8368BBF.pgp --export D09BA342BB8D5F37
+
+## Sign a key
+
+    gpg --sign-key -u <signer key ID> --default-cert-level <certification level> <signed key ID>
+    
+Where:
+
+* `signer key ID` is the ID of the key used to sign.
+* `signed key ID` is the ID of the key being signed.
+* `certification level` is the cerifictation level, as defined [here](https://www.gnupg.org/documentation/manuals/gnupg/GPG-Configuration-Options.html).
