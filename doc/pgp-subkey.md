@@ -12,3 +12,28 @@ In other words, through a structural analyze, the only thing that differentiates
 |--------|--------|--------|
 | key    | 6      | 5      |
 | subkey | 14     | 7      |
+
+However, from a _functional_ point of view, keys and subkeys present one fundamental difference:
+
+> See[Key Structures](https://tools.ietf.org/html/rfc4880#section-12.1) In a V4 key, **the primary key MUST
+> be a key capable of certification**. The subkeys may be keys of any **other type**.
+
+Thus, we have:
+
+| Type of key | Certification | Signing | Encryption | Authentication |
+|-------------|---------------|---------|------------|----------------|
+| primary key | x             | x       | x          | x              |
+| subkey      |               | x       | x          | x              |
+
+Please note that you can use GPG to show the potential usage of (sub)keys:
+
+    gpg --list-secret-keys --keyid-format LONG
+
+With (see [this link](https://unix.stackexchange.com/questions/31996/how-are-the-gpg-usage-flags-defined-in-the-key-details-listing)):
+
+| Meaning             | Code |
+|---------------------|------|
+| `PUBKEY_USAGE_SIG`  | S    |
+| `PUBKEY_USAGE_CERT` | C    |
+| `PUBKEY_USAGE_ENC`  | E    |
+| `PUBKEY_USAGE_AUTH` | A    |

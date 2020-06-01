@@ -102,3 +102,11 @@ Issuer key ID `B1589F0D0EA747F5`. This is Bob's key.
 > * **0x11**: Persona certification of a User ID and Public-Key packet.
 > * **0x12**: Casual certification of a User ID and Public-Key packet.
 > * **0x13**: Positive certification of a User ID and Public-Key packet.
+
+Please also note that only primary/master keys can be used to generate certification signatures.
+See [Key Structures](https://tools.ietf.org/html/rfc4880#section-12.1): 
+
+> In a V4 key, the primary key MUST be a key capable of certification.
+> The subkeys may be keys of any other type.  There may be other
+> constructions of V4 keys, too.
+

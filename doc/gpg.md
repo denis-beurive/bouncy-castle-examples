@@ -124,6 +124,7 @@ Then **SELECT THE (SUBKEY) to revoke**:
     key FD46A5EFC8368BBF [ENTER]
 
 > The command above is **VERY IMPORTANT**. If you don't select the subkey, then you will revoke the
+> See [edit-key](https://www.gnupg.org/gph/en/manual/r899.html).
 > "master key" (or "keyring", or "key") => all the "keys", including the subkeys.
 
     "revkey" [ENTER]

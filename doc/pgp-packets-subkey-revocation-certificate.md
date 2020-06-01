@@ -44,6 +44,7 @@ Edit the second subkey (which ID is `57DF16FBC3D83408`) in order to revoke it:
     "key 57DF16FBC3D83408" [ENTER]
   
 > The **VERY IMPORTANT** point here is the selection of the key/subkey to revoke.
+> See [edit-key](https://www.gnupg.org/gph/en/manual/r899.html).
 > In this case, we select the subkey which ID is `57DF16FBC3D83408`: `"key 57DF16FBC3D83408" [ENTER]`. 
     
 Here, you have the following output:
