@@ -60,21 +60,6 @@ hash instead of the older 2 byte (16 bit) checksum used by previous versions of 
 This new SHA1 secret key hash is specifed in RFC2440; the simple 16 bit checksum used by most
 previous versions of PGP and GPG is now deprecated.  
 
-# Note about the creation of subkeys
-
-[Public-Subkey Packet (Tag 14)](https://tools.ietf.org/html/rfc4880#section-5.5.1.2): A Public-Subkey packet (tag 14)
-has **exactly the same format** as a Public-Key packet, but denotes a subkey.
-
-[Secret-Subkey Packet (Tag 7)](https://tools.ietf.org/html/rfc4880#section-5.5.1.4): A Secret-Subkey packet (tag 7) is
-the subkey analog of the Secret Key packet and has **exactly the same format**.
-
-In other words, through a structural analyze, the only thing that differentiates a subkey from a key is the tag's value:
-
-|        | Public | Secret |
-|--------|--------|--------|
-| key    | 6      | 5      |
-| subkey | 14     | 7      |
-
 ## BC version 1.65 only
 
 > **IMPORTANT**
@@ -120,6 +105,7 @@ See methods:
 
 # Documents
 
+* [Notes about subkeys](../doc/pgp-subkey.md)
 * [java sign public pgp key with bouncycastle](https://stackoverflow.com/questions/28591684/java-sign-public-pgp-key-with-bouncycastle)
 * [PGP keys, software security, and much more threatened by new SHA1 exploit](https://arstechnica.com/information-technology/2020/01/pgp-keys-software-security-and-much-more-threatened-by-new-sha1-exploit/)
 * [SHA256 RSAkeyPairGenerator #200](https://github.com/bcgit/bc-java/issues/200)
