@@ -88,6 +88,7 @@ On this repository:
 
 On the WEB
 
+* [RFC 1991](https://www.ietf.org/rfc/rfc1991.txt)
 * [What exactly is a subkey?](https://security.stackexchange.com/questions/76940/what-exactly-is-a-subkey)
 * [How are primary key binding signatures (0x19) handled by gpg?](https://lists.gnupg.org/pipermail/gnupg-users/2014-May/049794.html)
 * [OpenPGP Under The Hood: literal data](https://under-the-hood.sequoia-pgp.org/literal-data/)
