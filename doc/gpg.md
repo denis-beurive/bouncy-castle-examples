@@ -43,6 +43,8 @@ With (see [this link](https://unix.stackexchange.com/questions/31996/how-are-the
 | `PUBKEY_USAGE_ENC`  | E    |
 | `PUBKEY_USAGE_AUTH` | A    |
 
+> See also [Key Flags subpacket](pgp-subpacket/subpacket-key-flags.md).
+
 ## Add a key into the GPG key rings
 
     $ gpg --edit-key ${KEYID}

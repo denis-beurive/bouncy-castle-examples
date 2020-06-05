@@ -70,8 +70,13 @@ We notice the presence of the Subkey Binding Signature (`sigclass 0x18`):
             subpkt 16 len 8 (issuer key ID 3559C947CA49C02B)
             data: [2042 bits]
 
-> This means that the subkey identified by the ID `D04E1857C36C89A1` is bound to the _master
-> key_ identified by the ID `3559C947CA49C02B`.
+Please note:
+
+* the subkey identified by the ID `D04E1857C36C89A1` is bound to the _master key_ identified by the ID `3559C947CA49C02B`.
+* the [sub-packet 27 (Key Flags)](https://tools.ietf.org/html/rfc4880#section-5.2.3.21) value is `0x0C`.
+  It holds information about the (sub)key. `0x0C` means that the kay can be used to (see [Key Flags subpacket](../pgp-subpacket/subpacket-key-flags.md)):
+  * encrypt communications
+  * encrypt storage
 
 Please note that, as you can see, the subkey identified by the ID `D04E1857C36C89A1` is not a signing subkey:
 

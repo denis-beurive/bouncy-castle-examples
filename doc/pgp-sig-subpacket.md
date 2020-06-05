@@ -50,4 +50,9 @@ shows the various types of subpackets:
 >             32 = Embedded Signature
 >     100 To 110 = Private or experimental
 
+Notes:
+
+* [Key Flags](pgp-subpacket/subpacket-key-flags.md)
+* [Issuer](pgp-subpacket/subpacket-issuer.md)
+* [Exportable Certification](pgp-subpacket/subpacket-exportable-certification.md)
 
