@@ -3,6 +3,8 @@
 > The issuer of this certification has done some casual
 > verification of the claim of identity.
 
+See [RFC 4880: Notes on Self-Signatures](https://tools.ietf.org/html/rfc4880#section-5.2.3.3)
+
 This type of signature is generated when a user signs another user key.
 
 Let say the user Suzy signs Henry's key.

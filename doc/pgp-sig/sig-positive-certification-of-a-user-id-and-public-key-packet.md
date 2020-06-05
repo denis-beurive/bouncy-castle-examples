@@ -7,6 +7,8 @@
 > certifications.  Some implementations can issue 0x11-0x13
 > certifications, but few differentiate between the types.
 
+See [RFC 4880: Notes on Self-Signatures](https://tools.ietf.org/html/rfc4880#section-5.2.3.3)
+
 This type of signature is generated when a user signs another user key.
 
 Let say the user Suzy signs Bill's key.

@@ -1,7 +1,5 @@
 # 0x28: Subkey revocation signature
 
-> 0x28 = 40
-
 > The signature is calculated directly on the subkey being revoked.
 > A revoked subkey is not to be used.  Only revocation signatures
 > by the top-level signature key that is bound to this subkey, or

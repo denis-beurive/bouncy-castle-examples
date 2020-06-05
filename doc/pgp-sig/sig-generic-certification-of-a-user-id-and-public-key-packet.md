@@ -4,6 +4,8 @@
 > assertion as to how well the certifier has checked that the owner
 > of the key is in fact the person described by the User ID.
 
+See [RFC 4880: Notes on Self-Signatures](https://tools.ietf.org/html/rfc4880#section-5.2.3.3)
+
 This type of signature is generated when a user signs another user key.
 
 Let say the user Joe signs Suzy's key.
@@ -83,3 +85,4 @@ We notice the _Generic certification of a User ID and Public-Key packet_ (`sigcl
             hashed subpkt 2 len 4 (sig created 2020-06-01)
             subpkt 16 len 8 (issuer key ID 774FE9EEEC882920)
             data: [2046 bits]
+

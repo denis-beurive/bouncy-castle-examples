@@ -1,7 +1,5 @@
 # 0x30: Certification revocation signature
 
-> 0x30 = 48
-
 > This signature revokes an earlier User ID certification signature
 > (signature class 0x10 through 0x13) or direct-key signature
 > (0x1F).  It should be issued by the same key that issued the

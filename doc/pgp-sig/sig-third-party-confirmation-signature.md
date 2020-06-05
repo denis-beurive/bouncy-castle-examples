@@ -1,7 +1,5 @@
 # 0x50: Third-Party Confirmation signature
 
-> 0x50 = 80
-
 > This signature is a signature over some other OpenPGP Signature
 > packet(s).  It is analogous to a notary seal on the signed data.
 > A third-party signature SHOULD include _Signature Target

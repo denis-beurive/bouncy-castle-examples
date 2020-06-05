@@ -4,3 +4,6 @@
 > It is calculated identically to a signature over a zero-length
 > binary document.  Note that it doesn't make sense to have a V3
 > standalone signature.
+
+
+

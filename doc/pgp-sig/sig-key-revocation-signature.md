@@ -1,7 +1,5 @@
 # 0x20: Key revocation signature
 
-> 0x20 = 32
-
 > The signature is calculated directly on the key being revoked.  A
 > revoked key is not to be used.  Only revocation signatures by the
 > key being revoked, or by an authorized revocation key, should be

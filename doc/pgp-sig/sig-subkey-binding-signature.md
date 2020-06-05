@@ -8,6 +8,8 @@
 > contains a 0x19 signature** made by the signing subkey on the
 > primary key and subkey.
 
+See [RFC 4880: Notes on Self-Signatures](https://tools.ietf.org/html/rfc4880#section-5.2.3.3)
+
 This signature is added to all subkeys.
 
 Let's dump a key (or keyring):

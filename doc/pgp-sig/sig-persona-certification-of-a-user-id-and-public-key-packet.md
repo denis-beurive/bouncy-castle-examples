@@ -3,6 +3,8 @@
 > The issuer of this certification has not done any verification of
 > the claim that the owner of this key is the User ID specified.
 
+See [RFC 4880: Notes on Self-Signatures](https://tools.ietf.org/html/rfc4880#section-5.2.3.3)
+
 This type of signature is generated when a user signs another user key.
 
 Let say the user Suzy signs Joe's key.
