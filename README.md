@@ -88,7 +88,9 @@ On this repository:
 
 On the WEB
 
+* [Open Specification for Pretty Good Privacy (openpgp)](https://datatracker.ietf.org/wg/openpgp/documents/)
 * [RFC 1991](https://www.ietf.org/rfc/rfc1991.txt)
+* [OpenPGP Example Keys and Certificates](https://datatracker.ietf.org/doc/draft-bre-openpgp-samples/)
 * [What exactly is a subkey?](https://security.stackexchange.com/questions/76940/what-exactly-is-a-subkey)
 * [How are primary key binding signatures (0x19) handled by gpg?](https://lists.gnupg.org/pipermail/gnupg-users/2014-May/049794.html)
 * [OpenPGP Under The Hood: literal data](https://under-the-hood.sequoia-pgp.org/literal-data/)

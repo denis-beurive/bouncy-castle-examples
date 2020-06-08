@@ -5,5 +5,6 @@
 > binary document.  Note that it doesn't make sense to have a V3
 > standalone signature.
 
-
-
+It seems that this type of signature is not used.
+GPG does not generate this kind of signature.
+Its function is not clear either.
